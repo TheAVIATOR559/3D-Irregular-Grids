@@ -3,18 +3,30 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-public class Grid_Builder_2D : MonoBehaviour
+public enum Shape
+{
+    CUBE,
+    PYRAMID,
+    TETRAHEDRON,
+    HEXAGONAL_PRISM,
+    OTCAHEDRON
+}
+
+public class Grid_Builder_3D : MonoBehaviour
 {
     private List<Point> gridPoints = new List<Point>();
     private List<Point> subPoints = new List<Point>();
 
-    [SerializeField] private int HORIZONTAL_GRID_SIZE = 10;
-    [SerializeField] private int VERTICAL_GRID_SIZE = 10;
+    [SerializeField] private int GRID_LENGTH = 10;
+    [SerializeField] private int GRID_HEIGHT = 10;
+    [SerializeField] private int GRID_DEPTH = 10;
     [SerializeField] private float DIAGONAL_FLIP_CHANCE = 0.35f;
     [SerializeField] private float SUB_POINT_CHANCE = 0.35f;
     [SerializeField] private float SUB_POINT_RIGIDITY_CHANCE = 0.35f;
     [SerializeField] private int MIN_CONNECTION_COUNT = 3;
     [SerializeField] private float MIN_POINT_DISTANCE = 0.35f;
+
+    [SerializeField] private Shape currentShape;
 
     [InspectorButton("CreatePoints", ButtonWidth = 250)]
     public bool CreatePointsButton;
@@ -38,18 +50,42 @@ public class Grid_Builder_2D : MonoBehaviour
 
     private void CreatePoints()
     {
-        for(int x = 0; x < HORIZONTAL_GRID_SIZE; x++)
+        switch(currentShape)
         {
-            for(int y = 0; y < VERTICAL_GRID_SIZE; y++)
+            case Shape.CUBE:
+                CreateCube();
+                break;
+            case Shape.PYRAMID:
+                break;
+            case Shape.TETRAHEDRON:
+                break;
+            case Shape.HEXAGONAL_PRISM:
+                break;
+            case Shape.OTCAHEDRON:
+                break;
+            default:
+                Debug.LogError("THIS SHOULD NEVER FIRE");
+                break;
+        }
+    }
+
+    private void CreateCube()
+    {
+        for (int x = 0; x < GRID_LENGTH; x++)
+        {
+            for (int y = 0; y < GRID_HEIGHT; y++)
             {
-                if(x == 0 || y == 0
-                    || x == HORIZONTAL_GRID_SIZE - 1 || y == VERTICAL_GRID_SIZE - 1)
+                for(int z = 0; z < GRID_DEPTH; z++)
                 {
-                    gridPoints.Add(new Point(x, 0, y, false));
-                }
-                else
-                {
-                    gridPoints.Add(new Point(x, 0, y));
+                    if (x == 0 || y == 0 || z == 0
+                    || x == GRID_LENGTH - 1 || y == GRID_HEIGHT - 1 || z == GRID_DEPTH)//todo this dont work how I want
+                    {
+                        gridPoints.Add(new Point(x, y, z, false));
+                    }
+                    else
+                    {
+                        gridPoints.Add(new Point(x, y, z));
+                    }
                 }
             }
         }
@@ -59,47 +95,47 @@ public class Grid_Builder_2D : MonoBehaviour
     {
         List<Vector3> diagonalsToFlip = new List<Vector3>();
 
-        for (int x = 0; x < HORIZONTAL_GRID_SIZE; x++)
+        for (int x = 0; x < GRID_LENGTH; x++)
         {
-            for (int y = 0; y < VERTICAL_GRID_SIZE; y++)
+            for (int y = 0; y < GRID_HEIGHT; y++)
             {
                 Point point = GetPoint(x, 0, y);
 
-                if(x == 0 || x == HORIZONTAL_GRID_SIZE - 1)
+                if (x == 0 || x == GRID_LENGTH - 1)
                 {
-                    if(y - 1 >= 0)
+                    if (y - 1 >= 0)
                     {
                         point.AddConnection(GetPoint(x, 0, y - 1));
                     }
-                    if(y + 1 < VERTICAL_GRID_SIZE)
+                    if (y + 1 < GRID_HEIGHT)
                     {
                         point.AddConnection(GetPoint(x, 0, y + 1));
                     }
                 }
 
-                if (y == 0 || y == VERTICAL_GRID_SIZE - 1)
+                if (y == 0 || y == GRID_HEIGHT - 1)
                 {
                     if (x - 1 >= 0)
                     {
                         point.AddConnection(GetPoint(x - 1, 0, y));
                     }
-                    if (x + 1 < HORIZONTAL_GRID_SIZE)
+                    if (x + 1 < GRID_LENGTH)
                     {
                         point.AddConnection(GetPoint(x + 1, 0, y));
                     }
                 }
 
-                if(x + 1 < HORIZONTAL_GRID_SIZE)
+                if (x + 1 < GRID_LENGTH)
                 {
                     point.AddConnection(GetPoint(x + 1, 0, y));
                 }
 
-                if(x - 1 >= 0)
+                if (x - 1 >= 0)
                 {
                     point.AddConnection(GetPoint(x - 1, 0, y));
                 }
 
-                if (y + 1 < VERTICAL_GRID_SIZE)
+                if (y + 1 < GRID_HEIGHT)
                 {
                     point.AddConnection(GetPoint(x, 0, y + 1));
                 }
@@ -109,13 +145,13 @@ public class Grid_Builder_2D : MonoBehaviour
                     point.AddConnection(GetPoint(x, 0, y - 1));
                 }
 
-                if(Random.Range(0f, 1f) <= DIAGONAL_FLIP_CHANCE)
+                if (Random.Range(0f, 1f) <= DIAGONAL_FLIP_CHANCE)
                 {
                     diagonalsToFlip.Add(new Vector3(x, 0, y));
                 }
                 else
                 {
-                    if (x + 1 < HORIZONTAL_GRID_SIZE && y + 1 < VERTICAL_GRID_SIZE)
+                    if (x + 1 < GRID_LENGTH && y + 1 < GRID_HEIGHT)
                     {
                         point.AddConnection(GetPoint(x + 1, 0, y + 1));
                     }
@@ -123,9 +159,9 @@ public class Grid_Builder_2D : MonoBehaviour
             }
         }
 
-        foreach(Vector3 diagonal in diagonalsToFlip)
+        foreach (Vector3 diagonal in diagonalsToFlip)
         {
-            if (diagonal.x + 1 < HORIZONTAL_GRID_SIZE && diagonal.z + 1 < VERTICAL_GRID_SIZE)
+            if (diagonal.x + 1 < GRID_LENGTH && diagonal.z + 1 < GRID_HEIGHT)
             {
                 /*
                  * get point at (x,y+1)
@@ -141,18 +177,18 @@ public class Grid_Builder_2D : MonoBehaviour
     {
         ShuffleGridPoints();
 
-        foreach(Point start in gridPoints)
+        foreach (Point start in gridPoints)
         {
-            foreach(Point neighbor in start.Connections)
+            foreach (Point neighbor in start.Connections)
             {
-                foreach(Point localLeft in neighbor.Connections)
+                foreach (Point localLeft in neighbor.Connections)
                 {
-                    if(localLeft == start)
+                    if (localLeft == start)
                     {
                         continue;
                     }
 
-                    if(localLeft.Connections.Contains(start) && IsLeft(start.Position, neighbor.Position, localLeft.Position)
+                    if (localLeft.Connections.Contains(start) && IsLeft(start.Position, neighbor.Position, localLeft.Position)
                         && Random.Range(0f, 1f) <= SUB_POINT_CHANCE)
                     {
                         Point newPoint = new Point((start.Position.x + neighbor.Position.x + localLeft.Position.x) / 3, 0, (start.Position.z + neighbor.Position.z + localLeft.Position.z) / 3, (Random.Range(0, 1f) >= SUB_POINT_RIGIDITY_CHANCE));
@@ -181,9 +217,9 @@ public class Grid_Builder_2D : MonoBehaviour
 
     private void AddSubPointConnections()
     {
-        foreach(Point point in subPoints)
+        foreach (Point point in subPoints)
         {
-            foreach(Point connection in point.Connections)
+            foreach (Point connection in point.Connections)
             {
                 connection.AddConnection(point);
             }
@@ -199,35 +235,35 @@ public class Grid_Builder_2D : MonoBehaviour
 
         List<Point> connsToRemove = new List<Point>();
 
-        foreach(Point point in gridPoints)
+        foreach (Point point in gridPoints)
         {
-            if(point.Connections.Count <= MIN_CONNECTION_COUNT)
+            if (point.Connections.Count <= MIN_CONNECTION_COUNT)
             {
                 continue;
             }
 
-            foreach(Point connection in point.Connections)
+            foreach (Point connection in point.Connections)
             {
-                if(!point.isModifiable && !connection.isModifiable)
+                if (!point.isModifiable && !connection.isModifiable)
                 {
                     continue;
                 }
 
-                if(point.Connections.Count - connsToRemove.Count > MIN_CONNECTION_COUNT
+                if (point.Connections.Count - connsToRemove.Count > MIN_CONNECTION_COUNT
                     && connection.Connections.Count > MIN_CONNECTION_COUNT)
                 {
                     connsToRemove.Add(connection);
                 }
             }
 
-            foreach(Point removed in connsToRemove)
+            foreach (Point removed in connsToRemove)
             {
                 point.RemoveConnectionsMutual(removed);
             }
 
             connsToRemove.Clear();
 
-            if(point.Connections.Count < MIN_CONNECTION_COUNT)
+            if (point.Connections.Count < MIN_CONNECTION_COUNT)
             {
                 Debug.LogError(point.Connections.Count);
             }
@@ -236,7 +272,7 @@ public class Grid_Builder_2D : MonoBehaviour
 
     private void ShuffleGridPoints()
     {
-        for(int i = 0; i < gridPoints.Count; i++)
+        for (int i = 0; i < gridPoints.Count; i++)
         {
             Point temp = gridPoints[i];
             int randIndex = Random.Range(i, gridPoints.Count);
@@ -248,13 +284,13 @@ public class Grid_Builder_2D : MonoBehaviour
 
     private void RebalanceGrid()
     {
-        foreach(Point point in gridPoints)
+        foreach (Point point in gridPoints)
         {
-            if(point.isModifiable)
+            if (point.isModifiable)
             {
                 Vector3 newPos = Vector3.zero;
 
-                foreach(Point neighbor in point.Connections)
+                foreach (Point neighbor in point.Connections)
                 {
                     newPos += neighbor.Position;
                 }
@@ -263,7 +299,7 @@ public class Grid_Builder_2D : MonoBehaviour
 
                 point.Connections = point.Connections.OrderBy(x => Vector3.Distance(newPos, x.Position)).ToList();
 
-                if(Vector3.Distance(newPos, point.Connections[0].Position) > MIN_POINT_DISTANCE)
+                if (Vector3.Distance(newPos, point.Connections[0].Position) > MIN_POINT_DISTANCE)
                 {
                     point.Position = newPos;
                 }
@@ -273,11 +309,11 @@ public class Grid_Builder_2D : MonoBehaviour
 
     private void UpdateConnections()
     {
-        foreach(Point core in gridPoints)
+        foreach (Point core in gridPoints)
         {
-            foreach(Point neighbor in core.Connections)
+            foreach (Point neighbor in core.Connections)
             {
-                if(!neighbor.Connections.Contains(core))
+                if (!neighbor.Connections.Contains(core))
                 {
                     neighbor.AddConnection(core);
                 }
@@ -298,17 +334,17 @@ public class Grid_Builder_2D : MonoBehaviour
     public void OnDrawGizmos()
     {
         Gizmos.color = Color.green;
-        foreach(Point point in gridPoints)
+        foreach (Point point in gridPoints)
         {
-            foreach(Point connection in point.Connections)
+            foreach (Point connection in point.Connections)
             {
                 Gizmos.DrawLine(point.Position, connection.Position);
             }
         }
 
-        foreach(Point point in gridPoints)
+        foreach (Point point in gridPoints)
         {
-            if(point.isModifiable)
+            if (point.isModifiable)
             {
                 Gizmos.color = Color.blue;
             }
@@ -320,7 +356,7 @@ public class Grid_Builder_2D : MonoBehaviour
             Gizmos.DrawSphere(point.Position, 0.1f);
         }
 
-        foreach(Point point in subPoints)
+        foreach (Point point in subPoints)
         {
             if (point.isModifiable)
             {
