@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 10756, guid: 0000000000000000e000000000000000, type: 0}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.12731749, g: 0.13414757, b: 0.1210787, a: 1}
+  m_IndirectSpecularColor: {r: NaN, g: NaN, b: NaN, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -155,9 +155,8 @@ MonoBehaviour:
   GRID_LENGTH: 10
   GRID_HEIGHT: 10
   GRID_DEPTH: 10
-  DIAGONAL_FLIP_CHANCE: 0.35
   SUB_POINT_CHANCE: 0.35
-  SUB_POINT_RIGIDITY_CHANCE: 0.35
+  SUB_POINT_RIGIDITY_CHANCE: 0.5
   MIN_CONNECTION_COUNT: 3
   MIN_POINT_DISTANCE: 0.35
   currentShape: 0
@@ -168,6 +167,9 @@ MonoBehaviour:
   RemoveRandomConnectionsButton: 0
   RebalanceGridButton: 0
   ClearGridButton: 0
+  DrawPoints: 1
+  DrawConnections: 1
+  DrawSubPoints: 1
 --- !u!4 &205470784
 Transform:
   m_ObjectHideFlags: 0

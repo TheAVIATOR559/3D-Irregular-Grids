@@ -17,11 +17,19 @@ public class Point
         Connections = new List<Point>();
     }
 
-    public void AddConnection(Point other)
+    public void AddConnection(Point other, bool mutual = true)
     {
         if(!this.Connections.Contains(other))
         {
-            this.Connections.Add(other);
+            if(mutual)
+            {
+                this.Connections.Add(other);
+                other.AddConnection(this, false);
+            }
+            else
+            {
+                this.Connections.Add(other);
+            }
         }
     }
 
@@ -37,6 +45,26 @@ public class Point
     {
         RemoveConnection(other);
         other.RemoveConnection(this);
+    }
+
+    public void ShuffleConnections()
+    {
+        for (int i = 0; i < Connections.Count; i++)
+        {
+            Point temp = Connections[i];
+            int randIndex = Random.Range(i, Connections.Count);
+
+            Connections[i] = Connections[randIndex];
+            Connections[randIndex] = temp;
+        }
+    }
+
+    public void SolidifyConnections()
+    {
+        foreach(Point connection in Connections)
+        {
+            connection.AddConnection(this, false);
+        }
     }
 
     public virtual bool Equals(Point other)
