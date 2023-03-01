@@ -283,23 +283,24 @@ public class Grid_Builder_3D : MonoBehaviour
                         point.AddConnection(GetPoint(x, y, z + 1));
                     }
 
-                    if (x + 1 < GRID_LENGTH && y + 1 < GRID_HEIGHT)
-                    {
-                        point.AddConnection(GetPoint(x + 1, y + 1, z));
-                    }
+                    //if (x + 1 < GRID_LENGTH && y + 1 < GRID_HEIGHT)
+                    //{
+                    //    point.AddConnection(GetPoint(x + 1, y + 1, z));
+                    //}
 
-                    if (x + 1 < GRID_LENGTH && z + 1 < GRID_DEPTH)
-                    {
-                        point.AddConnection(GetPoint(x + 1, y, z + 1));
-                    }
+                    //if (x + 1 < GRID_LENGTH && z + 1 < GRID_DEPTH)
+                    //{
+                    //    point.AddConnection(GetPoint(x + 1, y, z + 1));
+                    //}
 
-                    if (y + 1 < GRID_HEIGHT && z + 1 < GRID_DEPTH)
-                    {
-                        point.AddConnection(GetPoint(x, y + 1, z + 1));
-                    }
+                    //if (y + 1 < GRID_HEIGHT && z + 1 < GRID_DEPTH)
+                    //{
+                    //    point.AddConnection(GetPoint(x, y + 1, z + 1));
+                    //}
                 }
             }
         }
+        Debug.Log(Point.EDGE_COUNT);
     }
 
     private void CreateConnectionsPyramid()
@@ -463,9 +464,12 @@ public class Grid_Builder_3D : MonoBehaviour
         }
     }
 
-    private void CreateSubPoints()//todo this only works on the xz plane
+    private void CreateSubPoints()
     {
         ShuffleGridPoints();
+        int maxSubPoints = (GRID_LENGTH * GRID_DEPTH) * 2 * GRID_HEIGHT;
+        maxSubPoints = Mathf.RoundToInt(maxSubPoints * SUB_POINT_CHANCE);
+        int createdSubpoints = 0;
 
         foreach (Point start in gridPoints)
         {
@@ -478,14 +482,22 @@ public class Grid_Builder_3D : MonoBehaviour
                         continue;
                     }
 
-                    if (localLeft.Connections.Contains(start) && IsLeft(start.Position, neighbor.Position, localLeft.Position)
-                        && Random.Range(0f, 1f) <= SUB_POINT_CHANCE)
+                    Vector3 proposedPosition = new Vector3((start.Position.x + neighbor.Position.x + localLeft.Position.x) / 3, 
+                        (start.Position.y + neighbor.Position.y + localLeft.Position.y) / 3, 
+                        (start.Position.z + neighbor.Position.z + localLeft.Position.z) / 3);
+
+                    if (localLeft.Connections.Contains(start) /*&& IsLeft(start.Position, neighbor.Position, localLeft.Position)*/ 
+                        && createdSubpoints < maxSubPoints 
+                        && !SubPointExists(proposedPosition.x, proposedPosition.y, proposedPosition.z))
                     {
-                        Point newPoint = new Point((start.Position.x + neighbor.Position.x + localLeft.Position.x) / 3, (start.Position.y + neighbor.Position.y + localLeft.Position.y) / 3, (start.Position.z + neighbor.Position.z + localLeft.Position.z) / 3, (Random.Range(0, 1f) >= SUB_POINT_RIGIDITY_CHANCE));
+                        Point newPoint = new Point(proposedPosition.x, proposedPosition.y, proposedPosition.z, (Random.Range(0, 1f) >= SUB_POINT_RIGIDITY_CHANCE));
                         subPoints.Add(newPoint);
                         newPoint.AddConnection(start, false);
                         newPoint.AddConnection(neighbor, false);
                         newPoint.AddConnection(localLeft, false);
+                        createdSubpoints++;
+                        Debug.Log(maxSubPoints + "::" + createdSubpoints);
+                        continue;
                     }
                 }
             }
@@ -564,7 +576,7 @@ public class Grid_Builder_3D : MonoBehaviour
             Point temp = gridPoints[i];
             int randIndex = Random.Range(i, gridPoints.Count);
 
-            temp.ShuffleConnections();
+            //temp.ShuffleConnections();
 
             gridPoints[i] = gridPoints[randIndex];
             gridPoints[randIndex] = temp;
@@ -615,9 +627,20 @@ public class Grid_Builder_3D : MonoBehaviour
         return gridPoints.Find(point => point.IsNearEnough(x, y, z));
     }
 
+    private bool SubPointExists(float x, float y, float z)
+    {
+        if(subPoints.Count > 0)
+        {
+            return (subPoints.Find(point => point.IsNearEnough(x, y, z)) != null);
+        }
+
+        return false;
+    }
+
     private bool IsLeft(Vector3 a, Vector3 b, Vector3 c)//todo this doesnt work in 3d
     {
-        return ((b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x)) > 0;
+        float dir = Vector3.Dot(Vector3.Cross(b - a, b - c), Vector3.up);
+        return dir > 0;
     }
 
     private float DistanceLineSegmentPoint(Vector3 a, Vector3 b, Vector3 p)

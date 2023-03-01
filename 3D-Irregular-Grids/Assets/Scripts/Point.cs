@@ -5,6 +5,7 @@ using UnityEngine;
 public class Point
 {
     public static float COMPARISON_TOLERANCE = 0.1f;
+    public static int EDGE_COUNT = 0;
 
     public Vector3 Position;
     public List<Point> Connections;
@@ -29,7 +30,9 @@ public class Point
             else
             {
                 this.Connections.Add(other);
+                Point.EDGE_COUNT++;
             }
+            
         }
     }
 
