@@ -159,7 +159,7 @@ MonoBehaviour:
   SUB_POINT_RIGIDITY_CHANCE: 0.5
   MIN_CONNECTION_COUNT: 3
   MIN_POINT_DISTANCE: 0.35
-  currentShape: 0
+  currentShape: 2
   CreatePointsButton: 0
   CreateConnectionsButton: 0
   CreateSubPointsButton: 0
@@ -170,6 +170,7 @@ MonoBehaviour:
   DrawPoints: 1
   DrawConnections: 1
   DrawSubPoints: 1
+  DrawBoundingLines: 1
 --- !u!4 &205470784
 Transform:
   m_ObjectHideFlags: 0

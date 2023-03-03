@@ -16,6 +16,7 @@ public class Grid_Builder_3D : MonoBehaviour
 {
     private List<Point> gridPoints = new List<Point>();
     private List<Point> subPoints = new List<Point>();
+    private List<Point> boundingPoints = new List<Point>();
 
     [SerializeField] private int GRID_LENGTH = 10;
     [SerializeField] private int GRID_HEIGHT = 10;
@@ -59,7 +60,7 @@ public class Grid_Builder_3D : MonoBehaviour
                 CreatePyramid();
                 break;
             case Shape.TETRAHEDRON:
-                Debug.LogWarning("NOT HERE YET");
+                CreateTetrahedron();
                 break;
             case Shape.HEXAGONAL_PRISM:
                 Debug.LogWarning("NOT HERE YET");
@@ -95,6 +96,34 @@ public class Grid_Builder_3D : MonoBehaviour
         gridPoints.Add(new Point(GRID_LENGTH - 1, GRID_HEIGHT - 1, 0, false));
         gridPoints.Add(new Point(GRID_LENGTH - 1, GRID_HEIGHT - 1, GRID_DEPTH - 1, false));
         gridPoints.Add(new Point(0, GRID_HEIGHT - 1, GRID_DEPTH - 1, false));
+
+        boundingPoints.Add(new Point(0, 0, 0, false));
+        boundingPoints.Add(new Point(GRID_LENGTH - 1, 0, 0, false));
+        boundingPoints.Add(new Point(GRID_LENGTH - 1, 0, GRID_DEPTH - 1, false));
+        boundingPoints.Add(new Point(0, 0, GRID_DEPTH - 1, false));
+        boundingPoints.Add(new Point(0, GRID_HEIGHT - 1, 0, false));
+        boundingPoints.Add(new Point(GRID_LENGTH - 1, GRID_HEIGHT - 1, 0, false));
+        boundingPoints.Add(new Point(GRID_LENGTH - 1, GRID_HEIGHT - 1, GRID_DEPTH - 1, false));
+        boundingPoints.Add(new Point(0, GRID_HEIGHT - 1, GRID_DEPTH - 1, false));
+
+        boundingPoints[0].AddConnection(boundingPoints[1]);
+        boundingPoints[0].AddConnection(boundingPoints[3]);
+        boundingPoints[0].AddConnection(boundingPoints[4]);
+
+        boundingPoints[1].AddConnection(boundingPoints[2]);
+        boundingPoints[1].AddConnection(boundingPoints[5]);
+
+        boundingPoints[2].AddConnection(boundingPoints[3]);
+        boundingPoints[2].AddConnection(boundingPoints[6]);
+
+        boundingPoints[3].AddConnection(boundingPoints[7]);
+
+        boundingPoints[4].AddConnection(boundingPoints[5]);
+        boundingPoints[4].AddConnection(boundingPoints[7]);
+
+        boundingPoints[5].AddConnection(boundingPoints[6]);
+
+        boundingPoints[6].AddConnection(boundingPoints[7]);
 
         for (int x = 0; x < GRID_LENGTH; x++)
         {
@@ -143,6 +172,24 @@ public class Grid_Builder_3D : MonoBehaviour
         gridPoints.Add(new Point(0, 0, GRID_DEPTH - 1, false));
         gridPoints.Add(new Point((GRID_LENGTH-1) / 2f, (GRID_HEIGHT-1)/2f, (GRID_DEPTH-1) / 2f, false));
 
+        boundingPoints.Add(new Point(0, 0, 0, false));
+        boundingPoints.Add(new Point(GRID_LENGTH - 1, 0, 0, false));
+        boundingPoints.Add(new Point(GRID_LENGTH - 1, 0, GRID_DEPTH - 1, false));
+        boundingPoints.Add(new Point(0, 0, GRID_DEPTH - 1, false));
+        boundingPoints.Add(new Point((GRID_LENGTH - 1) / 2f, (GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f, false));
+
+        boundingPoints[0].AddConnection(boundingPoints[1]);
+        boundingPoints[0].AddConnection(boundingPoints[3]);
+        boundingPoints[0].AddConnection(boundingPoints[4]);
+
+        boundingPoints[1].AddConnection(boundingPoints[2]);
+        boundingPoints[1].AddConnection(boundingPoints[4]);
+
+        boundingPoints[2].AddConnection(boundingPoints[3]);
+        boundingPoints[2].AddConnection(boundingPoints[4]);
+
+        boundingPoints[3].AddConnection(boundingPoints[4]);
+
         for (int y = 0; y < GRID_HEIGHT; y++)
         {
             int length = GRID_LENGTH - y;
@@ -159,6 +206,75 @@ public class Grid_Builder_3D : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void CreateTetrahedron()
+    {
+        Debug.LogWarning("NOT DONE YET");
+
+        /* corner points
+         * (0, 0, 0)
+         * FILL IN THE REST
+         */
+
+        float height = Mathf.Sqrt(2f / 3f) * GRID_HEIGHT;
+
+        boundingPoints.Add(new Point(0, 0, 0, false));
+        boundingPoints.Add(new Point(GRID_LENGTH, 0, 0, false));
+        boundingPoints.Add(new Point(GRID_LENGTH / 2f, 0, GRID_DEPTH * (Mathf.Sqrt(3f) / 2f), false));
+        boundingPoints.Add(new Point((boundingPoints[0].Position.x + boundingPoints[1].Position.x + boundingPoints[2].Position.x) / 3f,
+            height, (boundingPoints[0].Position.z + boundingPoints[1].Position.z + boundingPoints[2].Position.z) / 3f, false));
+
+        boundingPoints[0].AddConnection(boundingPoints[1]);
+        boundingPoints[0].AddConnection(boundingPoints[2]);
+        boundingPoints[0].AddConnection(boundingPoints[3]);
+
+        boundingPoints[1].AddConnection(boundingPoints[2]);
+        boundingPoints[1].AddConnection(boundingPoints[3]);
+
+        boundingPoints[2].AddConnection(boundingPoints[3]);
+
+
+        gridPoints.Add(new Point(0, 0, 0, false));
+        gridPoints.Add(new Point(GRID_LENGTH, 0, 0, false));
+        gridPoints.Add(new Point(GRID_LENGTH / 2f, 0, GRID_DEPTH * (Mathf.Sqrt(3f) / 2f), false));
+        gridPoints.Add(new Point((gridPoints[0].Position.x + gridPoints[1].Position.x + gridPoints[2].Position.x) / 3f,
+            height, (gridPoints[0].Position.z + gridPoints[1].Position.z + gridPoints[2].Position.z) / 3f, false));
+
+        /* for x in 0 to gridlength
+         *  for z in 0 to griddepth
+         *   for y in 0 to height
+         *    if proposed point is inside tetrahedron
+         *     create point
+         */
+        for (int y = 0; y < GRID_HEIGHT; y++)
+        {
+            for (int x = 0; x < GRID_LENGTH; x++)
+            {
+                for (int z = 0; z < GRID_DEPTH; z++)
+                {
+                    Vector3 proposedPoint = new Vector3(x, y, z);
+                    Debug.Log(proposedPoint);
+                    if (IsPointInTetrahedron(gridPoints[0].Position, gridPoints[1].Position, gridPoints[2].Position, gridPoints[3].Position, proposedPoint))//todo le busted
+                    {
+                        gridPoints.Add(new Point(x,y,y));
+                    }
+                }
+            }
+        }
+    }
+
+    private bool IsPointInTetrahedron(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 p)
+    {
+        return IsSameSide(v1, v2, v3, v4, p) && IsSameSide(v2, v3, v4, v1, p) && IsSameSide(v3, v4, v1, v2, p) && IsSameSide(v4, v1, v2, v3, p);
+    }
+
+    private bool IsSameSide(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 p)
+    {
+        Vector3 normal = Vector3.Cross(v2 - v1, v3 - v1);
+        float v4Dot = Vector3.Dot(normal, v4 - v1);
+        float pDot = Vector3.Dot(normal, p - v1);
+        return Mathf.Sign(v4Dot) == Mathf.Sign(pDot);
     }
 
     private void CreateConnections()
@@ -283,20 +399,20 @@ public class Grid_Builder_3D : MonoBehaviour
                         point.AddConnection(GetPoint(x, y, z + 1));
                     }
 
-                    //if (x + 1 < GRID_LENGTH && y + 1 < GRID_HEIGHT)
-                    //{
-                    //    point.AddConnection(GetPoint(x + 1, y + 1, z));
-                    //}
+                    if (x + 1 < GRID_LENGTH && y + 1 < GRID_HEIGHT)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y + 1, z));
+                    }
 
-                    //if (x + 1 < GRID_LENGTH && z + 1 < GRID_DEPTH)
-                    //{
-                    //    point.AddConnection(GetPoint(x + 1, y, z + 1));
-                    //}
+                    if (x + 1 < GRID_LENGTH && z + 1 < GRID_DEPTH)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y, z + 1));
+                    }
 
-                    //if (y + 1 < GRID_HEIGHT && z + 1 < GRID_DEPTH)
-                    //{
-                    //    point.AddConnection(GetPoint(x, y + 1, z + 1));
-                    //}
+                    if (y + 1 < GRID_HEIGHT && z + 1 < GRID_DEPTH)
+                    {
+                        point.AddConnection(GetPoint(x, y + 1, z + 1));
+                    }
                 }
             }
         }
@@ -305,8 +421,6 @@ public class Grid_Builder_3D : MonoBehaviour
 
     private void CreateConnectionsPyramid()
     {
-        Debug.Log("AINT FINISHED YET");
-
         for (int y = 0; y < GRID_HEIGHT; y++)
         {
             int length = GRID_LENGTH - y;
@@ -467,37 +581,45 @@ public class Grid_Builder_3D : MonoBehaviour
     private void CreateSubPoints()
     {
         ShuffleGridPoints();
-        int maxSubPoints = (GRID_LENGTH * GRID_DEPTH) * 2 * GRID_HEIGHT;
-        maxSubPoints = Mathf.RoundToInt(maxSubPoints * SUB_POINT_CHANCE);
-        int createdSubpoints = 0;
 
         foreach (Point start in gridPoints)
         {
+            //Debug.Log("start");
+            bool subPointAdded = false;
+
             foreach (Point neighbor in start.Connections)
             {
+                if(subPointAdded)
+                {
+                    subPointAdded = false;
+                    break;
+                }
+                //Debug.Log("neighbor");
+
                 foreach (Point localLeft in neighbor.Connections)
                 {
                     if (localLeft == start)
                     {
                         continue;
                     }
+                    //Debug.Log("local left");
 
                     Vector3 proposedPosition = new Vector3((start.Position.x + neighbor.Position.x + localLeft.Position.x) / 3, 
                         (start.Position.y + neighbor.Position.y + localLeft.Position.y) / 3, 
                         (start.Position.z + neighbor.Position.z + localLeft.Position.z) / 3);
 
-                    if (localLeft.Connections.Contains(start) /*&& IsLeft(start.Position, neighbor.Position, localLeft.Position)*/ 
-                        && createdSubpoints < maxSubPoints 
-                        && !SubPointExists(proposedPosition.x, proposedPosition.y, proposedPosition.z))
+                    if (localLeft.Connections.Contains(start) && IsLeft(start.Position, neighbor.Position, localLeft.Position)
+                        //&& !SubPointExists(proposedPosition.x, proposedPosition.y, proposedPosition.z)
+                        && Random.Range(0f, 1f) <= SUB_POINT_CHANCE)
                     {
                         Point newPoint = new Point(proposedPosition.x, proposedPosition.y, proposedPosition.z, (Random.Range(0, 1f) >= SUB_POINT_RIGIDITY_CHANCE));
                         subPoints.Add(newPoint);
                         newPoint.AddConnection(start, false);
                         newPoint.AddConnection(neighbor, false);
                         newPoint.AddConnection(localLeft, false);
-                        createdSubpoints++;
-                        Debug.Log(maxSubPoints + "::" + createdSubpoints);
-                        continue;
+                        subPointAdded = true;
+                        //Debug.Log("sub point added");
+                        break;
                     }
                 }
             }
@@ -637,10 +759,11 @@ public class Grid_Builder_3D : MonoBehaviour
         return false;
     }
 
-    private bool IsLeft(Vector3 a, Vector3 b, Vector3 c)//todo this doesnt work in 3d
+    private bool IsLeft(Vector3 a, Vector3 b, Vector3 c)
     {
-        float dir = Vector3.Dot(Vector3.Cross(b - a, b - c), Vector3.up);
-        return dir > 0;
+        Vector3 dir = Vector3.Cross(b - a, b - c);
+        Vector3 norm = dir.normalized;
+        return Vector3.Dot(dir, norm) > 0;
     }
 
     private float DistanceLineSegmentPoint(Vector3 a, Vector3 b, Vector3 p)
@@ -658,6 +781,7 @@ public class Grid_Builder_3D : MonoBehaviour
     [SerializeField] private bool DrawPoints = true;
     [SerializeField] private bool DrawConnections = true;
     [SerializeField] private bool DrawSubPoints = true;
+    [SerializeField] private bool DrawBoundingLines = true;
 
     public void OnDrawGizmos()
     {
@@ -704,6 +828,18 @@ public class Grid_Builder_3D : MonoBehaviour
                 }
 
                 Gizmos.DrawSphere(point.Position, 0.1f);
+            }
+        }
+
+        if(DrawBoundingLines)
+        {
+            Gizmos.color = Color.magenta;
+            foreach (Point point in boundingPoints)
+            {
+                foreach (Point connection in point.Connections)
+                {
+                    Gizmos.DrawLine(point.Position, connection.Position);
+                }
             }
         }
     }

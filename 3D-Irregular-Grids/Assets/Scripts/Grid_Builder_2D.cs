@@ -131,7 +131,7 @@ public class Grid_Builder_2D : MonoBehaviour
                  * get point at (x,y+1)
                  * add connection to point at (x+1,y)
                  */
-                Debug.Log("diagonal :: " + diagonal);
+                //Debug.Log("diagonal :: " + diagonal);
                 GetPoint(diagonal.x, 0, diagonal.z + 1).AddConnection(GetPoint(diagonal.x + 1, 0, diagonal.z));
             }
         }
@@ -157,9 +157,9 @@ public class Grid_Builder_2D : MonoBehaviour
                     {
                         Point newPoint = new Point((start.Position.x + neighbor.Position.x + localLeft.Position.x) / 3, 0, (start.Position.z + neighbor.Position.z + localLeft.Position.z) / 3, (Random.Range(0, 1f) >= SUB_POINT_RIGIDITY_CHANCE));
                         subPoints.Add(newPoint);
-                        newPoint.AddConnection(start);
-                        newPoint.AddConnection(neighbor);
-                        newPoint.AddConnection(localLeft);
+                        newPoint.AddConnection(start, false);
+                        newPoint.AddConnection(neighbor, false);
+                        newPoint.AddConnection(localLeft, false);
                     }
                 }
             }
