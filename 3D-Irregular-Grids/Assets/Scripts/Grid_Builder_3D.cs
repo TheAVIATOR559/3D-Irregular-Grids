@@ -43,10 +43,25 @@ public class Grid_Builder_3D : MonoBehaviour
     [InspectorButton("ClearGrid", ButtonWidth = 250)]
     public bool ClearGridButton;
 
+    private float sin0;
+    private float sin60;
+    private float sin120;
+    private float sin180;
+    private float sin240;
+    private float sin300;
+
+    private float cos0;
+    private float cos60;
+    private float cos120;
+    private float cos180;
+    private float cos240;
+    private float cos300;
+
     private void ClearGrid()
     {
         gridPoints.Clear();
         subPoints.Clear();
+        boundingPoints.Clear();
     }
 
     private void CreatePoints()
@@ -63,10 +78,10 @@ public class Grid_Builder_3D : MonoBehaviour
                 CreateTetrahedron();
                 break;
             case Shape.HEXAGONAL_PRISM:
-                Debug.LogWarning("NOT HERE YET");
+                CreateHexagonalPrism();
                 break;
             case Shape.OTCAHEDRON:
-                Debug.LogWarning("NOT HERE YET");
+                CreateOctahedron();
                 break;
             default:
                 Debug.LogError("THIS SHOULD NEVER FIRE");
@@ -254,9 +269,10 @@ public class Grid_Builder_3D : MonoBehaviour
                 for (int z = 0; z < GRID_DEPTH; z++)
                 {
                     Vector3 proposedPoint = new Vector3(x, y, z);
-                    Debug.Log(proposedPoint);
+                    
                     if (IsPointInTetrahedron(gridPoints[0].Position, gridPoints[1].Position, gridPoints[2].Position, gridPoints[3].Position, proposedPoint))//todo le busted
                     {
+                        Debug.Log(proposedPoint);
                         gridPoints.Add(new Point(x,y,y));
                     }
                 }
@@ -277,6 +293,205 @@ public class Grid_Builder_3D : MonoBehaviour
         return Mathf.Sign(v4Dot) == Mathf.Sign(pDot);
     }
 
+    private void CreateHexagonalPrism()
+    {
+        sin0 = Mathf.Sin(0);
+        sin60 = Mathf.Sin(1.0472f);
+        sin120 = Mathf.Sin(2.0994f);
+        sin180 = Mathf.Sin(3.14159f);
+        sin240 = Mathf.Sin(4.18879f);
+        sin300 = Mathf.Sin(5.23599f);
+
+        cos0 = Mathf.Cos(0);
+        cos60 = Mathf.Cos(1.0472f);
+        cos120 = Mathf.Cos(2.0994f);
+        cos180 = Mathf.Cos(3.14159f);
+        cos240 = Mathf.Cos(4.18879f);
+        cos300 = Mathf.Cos(5.23599f);
+
+        List<Point> mainPoints = new List<Point>();
+        List<Point> secondaryPoints = new List<Point>();
+
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin0, 0, (GRID_LENGTH / 2) * cos0, false));
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin60, 0, (GRID_LENGTH / 2) * cos60, false));
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin120, 0, (GRID_LENGTH / 2) * cos120, false));
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin180, 0, (GRID_LENGTH / 2) * cos180, false));
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin240, 0, (GRID_LENGTH / 2) * cos240, false));
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin300, 0, (GRID_LENGTH / 2) * cos300, false));
+
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin0, GRID_HEIGHT-1, (GRID_LENGTH / 2) * cos0, false));
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin60, GRID_HEIGHT - 1, (GRID_LENGTH / 2) * cos60, false));
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin120, GRID_HEIGHT - 1, (GRID_LENGTH / 2) * cos120, false));
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin180, GRID_HEIGHT - 1, (GRID_LENGTH / 2) * cos180, false));
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin240, GRID_HEIGHT - 1, (GRID_LENGTH / 2) * cos240, false));
+        boundingPoints.Add(new Point((GRID_LENGTH / 2) * sin300, GRID_HEIGHT - 1, (GRID_LENGTH / 2) * cos300, false));
+
+        boundingPoints[0].AddConnection(boundingPoints[1]);
+        boundingPoints[1].AddConnection(boundingPoints[2]);
+        boundingPoints[2].AddConnection(boundingPoints[3]);
+        boundingPoints[3].AddConnection(boundingPoints[4]);
+        boundingPoints[4].AddConnection(boundingPoints[5]);
+        boundingPoints[5].AddConnection(boundingPoints[0]);
+
+        boundingPoints[6].AddConnection(boundingPoints[7]);
+        boundingPoints[7].AddConnection(boundingPoints[8]);
+        boundingPoints[8].AddConnection(boundingPoints[9]);
+        boundingPoints[9].AddConnection(boundingPoints[10]);
+        boundingPoints[10].AddConnection(boundingPoints[11]);
+        boundingPoints[11].AddConnection(boundingPoints[6]);
+
+        boundingPoints[0].AddConnection(boundingPoints[6]);
+        boundingPoints[1].AddConnection(boundingPoints[7]);
+        boundingPoints[2].AddConnection(boundingPoints[8]);
+        boundingPoints[3].AddConnection(boundingPoints[9]);
+        boundingPoints[4].AddConnection(boundingPoints[10]);
+        boundingPoints[5].AddConnection(boundingPoints[11]);
+
+        for(int y = 0; y <GRID_HEIGHT; y++)
+        {
+            for (int i = 1; i <= GRID_LENGTH / 2; i++)
+            {
+                if (i == GRID_LENGTH / 2 && (y == 0 || y == GRID_HEIGHT-1))
+                {
+                    mainPoints.Add(new Point(i * sin0, y, i * cos0, false));
+                    mainPoints.Add(new Point(i * sin60, y, i * cos60, false));
+                    mainPoints.Add(new Point(i * sin120, y, i * cos120, false));
+                    mainPoints.Add(new Point(i * sin180, y, i * cos180, false));
+                    mainPoints.Add(new Point(i * sin240, y, i * cos240, false));
+                    mainPoints.Add(new Point(i * sin300, y, i * cos300, false));
+                }
+                else
+                {
+                    mainPoints.Add(new Point(i * sin0, y, i * cos0));
+                    mainPoints.Add(new Point(i * sin60, y, i * cos60));
+                    mainPoints.Add(new Point(i * sin120, y, i * cos120));
+                    mainPoints.Add(new Point(i * sin180, y, i * cos180));
+                    mainPoints.Add(new Point(i * sin240, y, i * cos240));
+                    mainPoints.Add(new Point(i * sin300, y, i * cos300));
+                }
+
+                if (i < 2)
+                {
+                    continue;
+                }
+
+                for (int k = (i * 6) - 5; k <= i * 6; k++)
+                {
+                    for (float j = 1; j < i; j++)
+                    {
+                        //(x1 + k(x2 - x1), y1 + k(y2 - y1))
+                        //Debug.Log(k + "::" + j + "/" + i + "=" + (j / i));
+                        if (k == (i * 6))
+                        {
+                            if (i == 6)
+                            {
+                                //Debug.Log(k + "::" + mainPoints[k-1]);
+                                secondaryPoints.Add(new Point(mainPoints[k - 1].Position.x + (j / i) * (mainPoints[k - 6].Position.x - mainPoints[k - 1].Position.x), y, mainPoints[k - 1].Position.z + (j / i) * (mainPoints[k - 6].Position.z - mainPoints[k - 1].Position.z), false));
+                            }
+                            else
+                            {
+                                //Debug.Log(k + "::" + mainPoints[k-1]);
+                                secondaryPoints.Add(new Point(mainPoints[k - 1].Position.x + (j / i) * (mainPoints[k - 6].Position.x - mainPoints[k - 1].Position.x), y, mainPoints[k - 1].Position.z + (j / i) * (mainPoints[k - 6].Position.z - mainPoints[k - 1].Position.z)));
+                            }
+                        }
+                        else
+                        {
+                            if (i == 6)
+                            {
+                                secondaryPoints.Add(new Point(mainPoints[k - 1].Position.x + (j / i) * (mainPoints[k].Position.x - mainPoints[k - 1].Position.x), y, mainPoints[k - 1].Position.z + (j / i) * (mainPoints[k].Position.z - mainPoints[k - 1].Position.z), false));
+                            }
+                            else
+                            {
+                                secondaryPoints.Add(new Point(mainPoints[k - 1].Position.x + (j / i) * (mainPoints[k].Position.x - mainPoints[k - 1].Position.x), y, mainPoints[k - 1].Position.z + (j / i) * (mainPoints[k].Position.z - mainPoints[k - 1].Position.z)));
+                            }
+                        }
+                    }
+                }
+            }
+
+            gridPoints.Add(new Point(0, y, 0));
+        }
+        
+        gridPoints.AddRange(mainPoints);
+        gridPoints.AddRange(secondaryPoints);
+    }
+
+    private void CreateOctahedron()
+    {
+        /* corner points
+         * (0,0,0)
+         * (max, 0, 0)
+         * (max, 0, max)
+         * (0, 0, max)
+         * (max/2, height, max/2)
+         * (max/2, -height, max/2)
+         */
+
+        gridPoints.Add(new Point(0, 0, 0, false));
+        gridPoints.Add(new Point(GRID_LENGTH - 1, 0, 0, false));
+        gridPoints.Add(new Point(GRID_LENGTH - 1, 0, GRID_DEPTH - 1, false));
+        gridPoints.Add(new Point(0, 0, GRID_DEPTH - 1, false));
+        gridPoints.Add(new Point((GRID_LENGTH - 1) / 2f, (GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f, false));
+        gridPoints.Add(new Point((GRID_LENGTH - 1) / 2f, -(GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f, false));
+
+        boundingPoints.Add(new Point(0, 0, 0, false));
+        boundingPoints.Add(new Point(GRID_LENGTH - 1, 0, 0, false));
+        boundingPoints.Add(new Point(GRID_LENGTH - 1, 0, GRID_DEPTH - 1, false));
+        boundingPoints.Add(new Point(0, 0, GRID_DEPTH - 1, false));
+        boundingPoints.Add(new Point((GRID_LENGTH - 1) / 2f, (GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f, false));
+        boundingPoints.Add(new Point((GRID_LENGTH - 1) / 2f, -(GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f, false));
+
+        boundingPoints[0].AddConnection(boundingPoints[1]);
+        boundingPoints[0].AddConnection(boundingPoints[3]);
+        boundingPoints[0].AddConnection(boundingPoints[4]);
+        boundingPoints[0].AddConnection(boundingPoints[5]);
+
+        boundingPoints[1].AddConnection(boundingPoints[2]);
+        boundingPoints[1].AddConnection(boundingPoints[4]);
+        boundingPoints[1].AddConnection(boundingPoints[5]);
+
+        boundingPoints[2].AddConnection(boundingPoints[3]);
+        boundingPoints[2].AddConnection(boundingPoints[4]);
+        boundingPoints[2].AddConnection(boundingPoints[5]);
+
+        boundingPoints[3].AddConnection(boundingPoints[4]);
+        boundingPoints[3].AddConnection(boundingPoints[5]);
+
+        for (int y = 0; y < GRID_HEIGHT; y++)
+        {
+            int length = GRID_LENGTH - y;
+            int depth = GRID_DEPTH - y;
+            for (int x = y; x < length; x++)
+            {
+                for (int z = y; z < depth; z++)
+                {
+                    Point temp = new Point(x, y, z);
+                    if (gridPoints.Find(i => i.Position == temp.Position) == null)
+                    {
+                        gridPoints.Add(temp);
+                    }
+                }
+            }
+        }
+
+        for (int y = 0; y < GRID_HEIGHT; y++)
+        {
+            int length = GRID_LENGTH - y;
+            int depth = GRID_DEPTH - y;
+            for (int x = y; x < length; x++)
+            {
+                for (int z = y; z < depth; z++)
+                {
+                    Point temp = new Point(x, -y, z);
+                    if (gridPoints.Find(i => i.Position == temp.Position) == null)
+                    {
+                        gridPoints.Add(temp);
+                    }
+                }
+            }
+        }
+    }
+
     private void CreateConnections()
     {
         switch (currentShape)
@@ -291,10 +506,10 @@ public class Grid_Builder_3D : MonoBehaviour
                 Debug.LogWarning("NOT HERE YET");
                 break;
             case Shape.HEXAGONAL_PRISM:
-                Debug.LogWarning("NOT HERE YET");
+                CreateConnectionsHexagonalPrism();
                 break;
             case Shape.OTCAHEDRON:
-                Debug.LogWarning("NOT HERE YET");
+                CreateConnectionsOctahedron();
                 break;
             default:
                 Debug.LogError("THIS SHOULD NEVER FIRE");
@@ -575,6 +790,383 @@ public class Grid_Builder_3D : MonoBehaviour
                 }
             }
             
+        }
+    }
+
+    private void CreateConnectionsOctahedron()
+    {
+        for (int y = 0; y < GRID_HEIGHT; y++)
+        {
+            int length = GRID_LENGTH - y;
+            int depth = GRID_DEPTH - y;
+
+            //Debug.Log(y + " " + length + " " + depth);
+
+            if (y == length && y == depth)
+            {
+                break;
+            }
+
+            for (int x = y; x < length; x++)
+            {
+                for (int z = y; z < depth; z++)
+                {
+                    Point point = GetPoint(x, y, z);
+
+                    if (x == y)
+                    {
+                        if (z - 1 >= y)
+                        {
+                            point.AddConnection(GetPoint(x, y, z - 1));
+                        }
+                        if (z + 1 < depth)
+                        {
+                            point.AddConnection(GetPoint(x, y, z + 1));
+                        }
+
+                        if (y - 1 >= 0)
+                        {
+                            point.AddConnection(GetPoint(x - 1, y - 1, z));
+                        }
+                    }
+                    else if (x == length - 1)
+                    {
+                        if (z - 1 >= y)
+                        {
+                            point.AddConnection(GetPoint(x, y, z - 1));
+                        }
+                        if (z + 1 < depth)
+                        {
+                            point.AddConnection(GetPoint(x, y, z + 1));
+                        }
+
+                        if (y - 1 >= 0)
+                        {
+                            point.AddConnection(GetPoint(x + 1, y - 1, z));
+                        }
+                    }
+
+                    if (z == y)
+                    {
+                        if (x - 1 >= y)
+                        {
+                            point.AddConnection(GetPoint(x - 1, y, z));
+                        }
+                        if (x + 1 < length)
+                        {
+                            point.AddConnection(GetPoint(x + 1, y, z));
+                        }
+
+                        if (y - 1 >= 0)
+                        {
+                            point.AddConnection(GetPoint(x, y - 1, z - 1));
+                        }
+                    }
+                    else if (z == depth - 1)
+                    {
+                        if (x - 1 >= y)
+                        {
+                            point.AddConnection(GetPoint(x - 1, y, z));
+                        }
+                        if (x + 1 < length)
+                        {
+                            point.AddConnection(GetPoint(x + 1, y, z));
+                        }
+
+                        if (y - 1 >= 0)
+                        {
+                            point.AddConnection(GetPoint(x, y - 1, z + 1));
+                        }
+                    }
+
+                    if (x + 1 < length)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y, z));
+                    }
+                    if (x - 1 >= y)
+                    {
+                        point.AddConnection(GetPoint(x - 1, y, z));
+                    }
+
+                    if (z + 1 < depth)
+                    {
+                        point.AddConnection(GetPoint(x, y, z + 1));
+                    }
+                    if (z - 1 >= y)
+                    {
+                        point.AddConnection(GetPoint(x, y, z - 1));
+                    }
+
+                    //diagonals
+                    if (x + 1 < length && y + 1 < GRID_HEIGHT && GetPoint(x + 1, y + 1, z) != null)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y + 1, z));
+                    }
+
+                    if (x + 1 < length && z + 1 < depth)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y, z + 1));
+                    }
+
+                    if (z + 1 < depth && y + 1 < GRID_HEIGHT && GetPoint(x, y + 1, z + 1) != null)
+                    {
+                        point.AddConnection(GetPoint(x, y + 1, z + 1));
+                    }
+
+                    //vertical interior connections
+                    if (y + 1 <= GRID_HEIGHT && GetPoint(x, y + 1, z) != null)
+                    {
+                        point.AddConnection(GetPoint(x, y + 1, z));
+                    }
+
+                    //outer edge diagonal connections
+                    if (x == y && z == y && GetPoint(x + 1, y + 1, z + 1) != null)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y + 1, z + 1));
+                    }
+
+                    if (x == length - 1 && z == y && GetPoint(x - 1, y + 1, z + 1) != null)
+                    {
+                        point.AddConnection(GetPoint(x - 1, y + 1, z + 1));
+                    }
+
+                    if (x == y && z == depth - 1 && GetPoint(x + 1, y + 1, z - 1) != null)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y + 1, z - 1));
+                    }
+
+                    if (x == length - 1 && z == depth - 1 && GetPoint(x - 1, y + 1, z - 1) != null)
+                    {
+                        point.AddConnection(GetPoint(x - 1, y + 1, z - 1));
+                    }
+
+                    //apex connections
+                    //Debug.Log(y + " " + length + " " + (y + 1 == length - 1) + " :: " + (GetPoint((GRID_LENGTH - 1) / 2f, (GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f) != null));
+                    if (y + 1 == length - 1 && GetPoint((GRID_LENGTH - 1) / 2f, (GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f) != null)
+                    {
+                        point.AddConnection(GetPoint((GRID_LENGTH - 1) / 2f, (GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f));
+                    }
+                }
+            }
+
+        }
+
+        for (int y = 0; y > -GRID_HEIGHT; y--)
+        {
+            int length = GRID_LENGTH + y;
+            int depth = GRID_DEPTH + y;
+
+            //Debug.Log(y + " " + length + " " + depth);
+
+            if (y == length && y == depth)
+            {
+                break;
+            }
+
+            int absY = Mathf.Abs(y);
+            //Debug.Log(y + "::" + absY);
+            for (int x = absY; x < length; x++)
+            {
+                for (int z = absY; z < depth; z++)
+                {
+                    //Debug.Log(x + " " + y + " " + z);
+                    Point point = GetPoint(x, y, z);
+
+                    if (x == absY)
+                    {
+                        if (z - 1 >= absY)
+                        {
+                            point.AddConnection(GetPoint(x, y, z - 1));
+                        }
+                        if (z + 1 < depth)
+                        {
+                            point.AddConnection(GetPoint(x, y, z + 1));
+                        }
+
+                        if (y + 1 <= 0)
+                        {
+                            point.AddConnection(GetPoint(x - 1, y + 1, z));
+                        }
+                    }
+                    else if (x == length - 1)
+                    {
+                        if (z - 1 >= absY)
+                        {
+                            point.AddConnection(GetPoint(x, y, z - 1));
+                        }
+                        if (z + 1 < depth)
+                        {
+                            point.AddConnection(GetPoint(x, y, z + 1));
+                        }
+
+                        if (y + 1 <= 0)
+                        {
+                            point.AddConnection(GetPoint(x + 1, y + 1, z));
+                        }
+                    }
+
+                    if (z == absY)
+                    {
+                        if (x - 1 >= absY)
+                        {
+                            point.AddConnection(GetPoint(x - 1, y, z));
+                        }
+                        if (x + 1 < length)
+                        {
+                            point.AddConnection(GetPoint(x + 1, y, z));
+                        }
+
+                        if (y + 1 <= 0)
+                        {
+                            point.AddConnection(GetPoint(x, y + 1, z - 1));
+                        }
+                    }
+                    else if (z == depth - 1)
+                    {
+                        if (x - 1 >= absY)
+                        {
+                            point.AddConnection(GetPoint(x - 1, y, z));
+                        }
+                        if (x + 1 < length)
+                        {
+                            point.AddConnection(GetPoint(x + 1, y, z));
+                        }
+
+                        if (y + 1 <= 0)
+                        {
+                            point.AddConnection(GetPoint(x, y + 1, z + 1));
+                        }
+                    }
+
+                    if (x + 1 < length)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y, z));
+                    }
+                    if (x - 1 >= absY)
+                    {
+                        point.AddConnection(GetPoint(x - 1, y, z));
+                    }
+
+                    if (z + 1 < depth)
+                    {
+                        point.AddConnection(GetPoint(x, y, z + 1));
+                    }
+                    if (z - 1 >= absY)
+                    {
+                        point.AddConnection(GetPoint(x, y, z - 1));
+                    }
+
+                    //diagonals
+                    if (x + 1 < length && y - 1 > -GRID_HEIGHT && GetPoint(x + 1, y - 1, z) != null)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y - 1, z));
+                    }
+
+                    if (x + 1 < length && z + 1 < depth)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y, z + 1));
+                    }
+
+                    if (z + 1 < depth && y - 1 > -GRID_HEIGHT && GetPoint(x, y - 1, z + 1) != null)
+                    {
+                        point.AddConnection(GetPoint(x, y - 1, z + 1));
+                    }
+
+                    //outer edge diagonal connections
+                    if (x == absY && z == absY && GetPoint(x + 1, y - 1, z + 1) != null)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y - 1, z + 1));
+                    }
+
+                    if (x == length - 1 && z == absY && GetPoint(x - 1, y - 1, z + 1) != null)
+                    {
+                        point.AddConnection(GetPoint(x - 1, y - 1, z + 1));
+                    }
+
+                    if (x == absY && z == depth - 1 && GetPoint(x + 1, y - 1, z - 1) != null)
+                    {
+                        point.AddConnection(GetPoint(x + 1, y - 1, z - 1));
+                    }
+
+                    if (x == length - 1 && z == depth - 1 && GetPoint(x - 1, y - 1, z - 1) != null)
+                    {
+                        point.AddConnection(GetPoint(x - 1, y - 1, z - 1));
+                    }
+
+                    //apex connections
+                    //Debug.Log(y + " " + length + " " + (y + 1 == length - 1) + " :: " + (GetPoint((GRID_LENGTH - 1) / 2f, (GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f) != null));
+                    if (absY + 1 == length - 1 && GetPoint((GRID_LENGTH - 1) / 2f, -(GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f) != null)
+                    {
+                        point.AddConnection(GetPoint((GRID_LENGTH - 1) / 2f, -(GRID_HEIGHT - 1) / 2f, (GRID_DEPTH - 1) / 2f));
+                    }
+                }
+            }
+        }
+    }
+
+    private void CreateConnectionsHexagonalPrism()
+    {
+        //List<Vector3> offsets = new List<Vector3>()
+        //{
+        //    //new Vector3(0, 1, 0),
+        //    new Vector3(sin0, 0, cos0),
+        //    //new Vector3(sin0, 1, cos0),
+        //    new Vector3(sin60, 0, cos60),
+        //    new Vector3(sin120, 0, cos120),
+        //    new Vector3(sin180, 0, cos180),
+        //    new Vector3(sin240, 0, cos240),
+        //    new Vector3(sin300, 0, cos300),
+        //};
+
+        foreach (Point point in gridPoints)
+        {
+            //foreach(Vector3 offset in offsets)
+            //{
+
+            //    Point connection = GetPoint(point.Position.x + offset.x, point.Position.z + offset.z, point.Position.x + offset.z);
+            //    Debug.Log(point.Position + "::" + offset + "::" + (point.Position + offset) + "::" + connection);
+            //    if (connection != null)
+            //    {
+            //        point.AddConnection(connection);
+            //    }
+            //}
+
+            for (int i = 0; i < gridPoints.Count; i++)
+            {
+                if (gridPoints[i] == point)
+                {
+                    continue;
+                }
+
+                if (gridPoints[i].IsNearEnough(point.Position.x, point.Position.y + 1, point.Position.z))
+                {
+                    point.AddConnection(gridPoints[i]);
+                }
+                else if (gridPoints[i].IsNearEnough(point.Position.x + sin0, point.Position.y, point.Position.z + cos0))
+                {
+                    point.AddConnection(gridPoints[i]);
+                }
+                else if (gridPoints[i].IsNearEnough(point.Position.x + sin0, point.Position.y + 1, point.Position.z + cos0))
+                {
+                    point.AddConnection(gridPoints[i]);
+                }
+                else if (gridPoints[i].IsNearEnough(point.Position.x + sin60, point.Position.y, point.Position.z + cos60))
+                {
+                    point.AddConnection(gridPoints[i]);
+                }
+                else if (gridPoints[i].IsNearEnough(point.Position.x + sin60, point.Position.y + 1, point.Position.z + cos60))
+                {
+                    point.AddConnection(gridPoints[i]);
+                }
+                else if (gridPoints[i].IsNearEnough(point.Position.x + sin300, point.Position.y, point.Position.z + cos300))
+                {
+                    point.AddConnection(gridPoints[i]);
+                }
+                else if (gridPoints[i].IsNearEnough(point.Position.x + sin300, point.Position.y + 1, point.Position.z + cos300))
+                {
+                    point.AddConnection(gridPoints[i]);
+                }
+            }
         }
     }
 
