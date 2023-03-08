@@ -225,11 +225,12 @@ public class Grid_Builder_3D : MonoBehaviour
 
     private void CreateTetrahedron()
     {
-        Debug.LogWarning("NOT DONE YET");
-
         /* corner points
          * (0, 0, 0)
-         * FILL IN THE REST
+         * (GRID_LENGTH, 0, 0)
+         * (GRID_LENGTH / 2f, 0, GRID_DEPTH * (Mathf.Sqrt(3f) / 2f))
+         * ((boundingPoints[0].Position.x + boundingPoints[1].Position.x + boundingPoints[2].Position.x) / 3f,
+            Mathf.Sqrt(2f / 3f) * GRID_HEIGHT, (boundingPoints[0].Position.z + boundingPoints[1].Position.z + boundingPoints[2].Position.z) / 3f)
          */
 
         float height = Mathf.Sqrt(2f / 3f) * GRID_HEIGHT;
@@ -262,35 +263,44 @@ public class Grid_Builder_3D : MonoBehaviour
          *    if proposed point is inside tetrahedron
          *     create point
          */
-        for (int y = 0; y < GRID_HEIGHT; y++)
+        for (int y = 0; y < height-1; y++)
         {
             for (int x = 0; x < GRID_LENGTH; x++)
             {
                 for (int z = 0; z < GRID_DEPTH; z++)
                 {
-                    Vector3 proposedPoint = new Vector3(x, y, z);
-                    
-                    if (IsPointInTetrahedron(gridPoints[0].Position, gridPoints[1].Position, gridPoints[2].Position, gridPoints[3].Position, proposedPoint))//todo le busted
+                    if(x==0 && z==0)
                     {
-                        Debug.Log(proposedPoint);
-                        gridPoints.Add(new Point(x,y,y));
+                        continue;
+                    }
+                    Vector3 proposedPoint = new Vector3(x, y, z);
+
+                    if (/*IsPointInTetrahedron(gridPoints[0].Position, gridPoints[1].Position, gridPoints[2].Position, proposedPoint)
+                        &&*/ IsPointInTetrahedron(gridPoints[0].Position, gridPoints[1].Position, gridPoints[3].Position, proposedPoint)
+                        && IsPointInTetrahedron(gridPoints[1].Position, gridPoints[2].Position, gridPoints[3].Position, proposedPoint)
+                        && IsPointInTetrahedron(gridPoints[2].Position, gridPoints[0].Position, gridPoints[3].Position, proposedPoint))
+                    {
+                        //Debug.Log(proposedPoint);
+                        gridPoints.Add(new Point(x, y, z));
                     }
                 }
             }
         }
     }
 
-    private bool IsPointInTetrahedron(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 p)
-    {
-        return IsSameSide(v1, v2, v3, v4, p) && IsSameSide(v2, v3, v4, v1, p) && IsSameSide(v3, v4, v1, v2, p) && IsSameSide(v4, v1, v2, v3, p);
-    }
+    /* ax + by + cz + d = 0
+     * -d = ax + by + cz
+     * d = -(ax + by + cz)
+     */
 
-    private bool IsSameSide(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 p)
+    private bool IsPointInTetrahedron(Vector3 a, Vector3 b, Vector3 c, Vector3 p)
     {
-        Vector3 normal = Vector3.Cross(v2 - v1, v3 - v1);
-        float v4Dot = Vector3.Dot(normal, v4 - v1);
-        float pDot = Vector3.Dot(normal, p - v1);
-        return Mathf.Sign(v4Dot) == Mathf.Sign(pDot);
+        Vector3 normal = Vector3.Cross(c - a, b - a);
+        float k = -((normal.x * c.x) + (normal.y * c.y) + (normal.z * c.z));
+        //Debug.Log(k + "=-(" + normal.x + "*" + c.x + "+" + normal.y + "*" + c.y + "+" + normal.z + "*" + c.z);
+        float result = (normal.x * p.x) + (normal.y * p.y) + (normal.z * p.z) + k;
+        //Debug.Log(result + "=" + (normal.x * p.x) + "+" + (normal.y * p.y) + "+" + (normal.z * p.z) + "+" + k + "::" + normal);
+        return result <= 0f;
     }
 
     private void CreateHexagonalPrism()
@@ -503,7 +513,7 @@ public class Grid_Builder_3D : MonoBehaviour
                 CreateConnectionsPyramid();
                 break;
             case Shape.TETRAHEDRON:
-                Debug.LogWarning("NOT HERE YET");
+                CreateConnectionsTetrahedron();
                 break;
             case Shape.HEXAGONAL_PRISM:
                 CreateConnectionsHexagonalPrism();
@@ -1170,6 +1180,74 @@ public class Grid_Builder_3D : MonoBehaviour
         }
     }
 
+    private void CreateConnectionsTetrahedron()
+    {
+        Debug.LogWarning("NOT DONE YET");
+
+        Point connection = null;
+        foreach (Point point in gridPoints)
+        {
+            connection = GetPoint(point.Position.x + 1, point.Position.y, point.Position.z);
+            if(connection != null)
+            {
+                point.AddConnection(connection);
+            }
+
+            connection = GetPoint(point.Position.x, point.Position.y, point.Position.z + 1);
+            if (connection != null)
+            {
+                point.AddConnection(connection);
+            }
+
+            connection = GetPoint(point.Position.x, point.Position.y + 1, point.Position.z);
+            if (connection != null)
+            {
+                point.AddConnection(connection);
+            }
+
+            connection = GetPoint(point.Position.x + 1, point.Position.y, point.Position.z + 1);
+            if (connection != null)
+            {
+                point.AddConnection(connection);
+            }
+
+            connection = GetPoint(point.Position.x + 1, point.Position.y + 1, point.Position.z);
+            if (connection != null)
+            {
+                point.AddConnection(connection);
+            }
+
+            connection = GetPoint(point.Position.x, point.Position.y + 1, point.Position.z + 1);
+            if (connection != null)
+            {
+                point.AddConnection(connection);
+            }
+            //else if((x,y,z+1) and (x,y+1,z) are not connected)
+            //{
+            //    connection = GetPoint(point.Position.x, point.Position.y + 1, point.Position.z - 1);
+            //    if (connection != null)
+            //    {
+            //        point.AddConnection(connection);
+            //    }
+            //}
+        }
+
+        
+
+        connection = GetNearestPoint(gridPoints[3]);
+        if(connection != null)
+        {
+            gridPoints[3].AddConnection(connection);
+        }
+
+        connection = null;
+        connection = GetNearestPoint(gridPoints[2]);
+        if (connection != null)
+        {
+            gridPoints[2].AddConnection(connection);
+        }
+    }
+
     private void CreateSubPoints()
     {
         ShuffleGridPoints();
@@ -1349,6 +1427,27 @@ public class Grid_Builder_3D : MonoBehaviour
         }
 
         return false;
+    }
+
+    private Point GetNearestPoint(Point core)
+    {
+        float distance = float.MaxValue;
+        Point nearestPoint = null;
+        foreach(Point point in gridPoints)
+        {
+            if(point == core)
+            {
+                continue;
+            }
+
+            if(Vector3.Distance(core.Position, point.Position) < distance)
+            {
+                distance = Vector3.Distance(core.Position, point.Position);
+                nearestPoint = point;
+            }
+        }
+
+        return nearestPoint;
     }
 
     private bool IsLeft(Vector3 a, Vector3 b, Vector3 c)
