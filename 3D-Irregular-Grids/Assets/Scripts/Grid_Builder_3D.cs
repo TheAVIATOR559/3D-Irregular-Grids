@@ -1182,8 +1182,6 @@ public class Grid_Builder_3D : MonoBehaviour
 
     private void CreateConnectionsTetrahedron()
     {
-        Debug.LogWarning("NOT DONE YET");
-
         Point connection = null;
         foreach (Point point in gridPoints)
         {
@@ -1222,14 +1220,30 @@ public class Grid_Builder_3D : MonoBehaviour
             {
                 point.AddConnection(connection);
             }
-            //else if((x,y,z+1) and (x,y+1,z) are not connected)
-            //{
-            //    connection = GetPoint(point.Position.x, point.Position.y + 1, point.Position.z - 1);
-            //    if (connection != null)
-            //    {
-            //        point.AddConnection(connection);
-            //    }
-            //}
+
+            connection = GetPoint(point.Position.x, point.Position.y, point.Position.z + 1);
+            Point connection2 = GetPoint(point.Position.x, point.Position.y + 1, point.Position.z);
+            Point connection3 = GetPoint(point.Position.x, point.Position.y + 1, point.Position.z + 1);
+            if (connection3 == null && connection != null && connection2 != null)
+            {
+                connection.AddConnection(connection2);
+            }
+
+            connection = GetPoint(point.Position.x + 1, point.Position.y, point.Position.z);
+            connection2 = GetPoint(point.Position.x, point.Position.y + 1, point.Position.z);
+            connection3 = GetPoint(point.Position.x + 1, point.Position.y + 1, point.Position.z);
+            if (connection3 == null && connection != null && connection2 != null)
+            {
+                connection.AddConnection(connection2);
+            }
+
+            connection = GetPoint(point.Position.x + 1, point.Position.y, point.Position.z);
+            connection2 = GetPoint(point.Position.x, point.Position.y, point.Position.z + 1);
+            connection3 = GetPoint(point.Position.x + 1, point.Position.y, point.Position.z + 1);
+            if (connection3 == null && connection != null && connection2 != null)
+            {
+                connection.AddConnection(connection2);
+            }
         }
 
         

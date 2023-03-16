@@ -50,6 +50,11 @@ public class Point
         other.RemoveConnection(this);
     }
 
+    public bool HasConnectionTo(Point other)
+    {
+        return Connections.Contains(other);
+    }
+
     public void ShuffleConnections()
     {
         for (int i = 0; i < Connections.Count; i++)
