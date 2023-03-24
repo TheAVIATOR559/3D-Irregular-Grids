@@ -5,7 +5,7 @@ using System.Linq;
 
 public class Grid_Builder_Anchor : MonoBehaviour
 {
-    [SerializeField] private List<Vector3> anchors = new List<Vector3>();
+    [SerializeField] private List<Anchor_Point> anchors = new List<Anchor_Point>();
 
     private List<Point> gridPoints = new List<Point>();
     private List<Point> subPoints = new List<Point>();
@@ -54,7 +54,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
 
         foreach (Transform child in transform)
         {
-            anchors.Add(new Vector3(child.position.x, child.position.y, child.position.z));
+            anchors.Add(child.GetComponent<Anchor_Point>());
             gridPoints.Add(new Point(child.position.x, child.position.y, child.position.z, false));
 
             if (child.position.x < knownLowerX)
@@ -86,11 +86,6 @@ public class Grid_Builder_Anchor : MonoBehaviour
             origin += child.position;
         }
 
-        origin = origin / transform.childCount;
-
-        //sort points in counter clockwise order
-        anchors.Sort(new ClockwiseComparer(origin));
-
         upperbound = new Vector3Int(Mathf.FloorToInt(knownUpperX), Mathf.FloorToInt(knownUpperY), Mathf.FloorToInt(knownUpperZ));
         lowerbound = new Vector3Int(Mathf.FloorToInt(knownLowerX), Mathf.FloorToInt(knownLowerY), Mathf.FloorToInt(knownLowerZ));
 
@@ -101,6 +96,9 @@ public class Grid_Builder_Anchor : MonoBehaviour
                 for (int z = lowerbound.z; z <= upperbound.z; z++)
                 {
                     //Debug.Log("adding point");
+                    /* if proposed point is to the left of each anchor point and its neighbors
+                     *  create the point
+                     */
                     if(GetPoint(x,y,z) == null /* and point(x,y,z) is inside the 2d polygon defined by the anchors*/)
                     {
                         gridPoints.Add(new Point(x, y, z));
