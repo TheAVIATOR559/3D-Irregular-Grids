@@ -32,7 +32,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
 
     [SerializeField] private Vector3Int upperbound;
     [SerializeField] private Vector3Int lowerbound;
-
+    
     private void ClearGrid()
     {
         anchors.Clear();
@@ -50,11 +50,11 @@ public class Grid_Builder_Anchor : MonoBehaviour
         float knownUpperY = float.MinValue;
         float knownLowerZ = float.MaxValue;
         float knownUpperZ = float.MinValue;
-        Vector3 origin = new Vector3();
 
         foreach (Transform child in transform)
         {
             anchors.Add(child.GetComponent<Anchor_Point>());
+            child.GetComponent<Anchor_Point>().Initialize();
             gridPoints.Add(new Point(child.position.x, child.position.y, child.position.z, false));
 
             if (child.position.x < knownLowerX)
@@ -83,7 +83,6 @@ public class Grid_Builder_Anchor : MonoBehaviour
             {
                 knownUpperZ = child.position.z;
             }
-            origin += child.position;
         }
 
         upperbound = new Vector3Int(Mathf.FloorToInt(knownUpperX), Mathf.FloorToInt(knownUpperY), Mathf.FloorToInt(knownUpperZ));
@@ -95,12 +94,10 @@ public class Grid_Builder_Anchor : MonoBehaviour
             {
                 for (int z = lowerbound.z; z <= upperbound.z; z++)
                 {
-                    //Debug.Log("adding point");
-                    /* if proposed point is to the left of each anchor point and its neighbors
-                     *  create the point
-                     */
-                    if(GetPoint(x,y,z) == null /* and point(x,y,z) is inside the 2d polygon defined by the anchors*/)
+                    Debug.Log("attempting point creation");
+                    if (GetPoint(x, y, z) == null && IsPointInPolygon(anchors, new Vector3(x,y,z)))
                     {
+                        Debug.Log("point creation");
                         gridPoints.Add(new Point(x, y, z));
                     }
                 }
@@ -317,21 +314,94 @@ public class Grid_Builder_Anchor : MonoBehaviour
 
     private bool IsLeft(Vector3 a, Vector3 b, Vector3 c)
     {
-        Vector3 dir = Vector3.Cross(b - a, b - c);
-        Vector3 norm = dir.normalized;
-        return Vector3.Dot(dir, norm) > 0;
+        //Vector3 dir = Vector3.Cross(b - a, b - c);
+        //Vector3 norm = dir.normalized;
+        //return Vector3.Dot(dir, norm) > 0;
+        Vector3 vec = b - a;
+        Vector3 dir = c - a;
+
+        Vector3 cross = Vector3.Cross(vec, dir);
+        return cross.magnitude > 0f;
     }
 
-    private float DistanceLineSegmentPoint(Vector3 a, Vector3 b, Vector3 p)
+    public bool IsPointInPolygon(List<Anchor_Point> polygonPoints, Vector3 point)
     {
-        if (a == b)
+        Vector3 xMax = polygonPoints[0].Position;
+
+        foreach(Anchor_Point anchor in polygonPoints)
         {
-            return Vector3.Distance(a, p);
+            if(anchor.Position.x > xMax.x)
+            {
+                xMax = anchor.Position;
+            }
         }
 
-        Vector3 ba = b - a;
-        Vector3 pa = a - p;
-        return (pa - ba * (Vector3.Dot(pa, ba) / Vector3.Dot(ba, ba))).magnitude;
+        Vector3 pointOutside = xMax + new Vector3(10f, 0, 0);
+
+        Vector3 l1P1 = point;
+        Vector3 l1P2 = pointOutside;
+
+        int intersectionCount = 0;
+
+        for (int i = 0; i < polygonPoints.Count; i++)
+        {
+            Vector3 l2P1 = polygonPoints[i].Position;
+
+            int iPlusOne = ClampListIndex(i + 1, polygonPoints.Count);
+
+            Vector3 l2P2 = polygonPoints[iPlusOne].Position;
+
+            if (DoLinesIntersect(l1P1, l1P2, l2P1, l2P2, true))
+            {
+                intersectionCount += 1;
+            }
+        }
+
+        bool isInside = true;
+
+        if(intersectionCount == 0 || intersectionCount % 2 == 0)
+        {
+            isInside = false;
+        }
+
+        return isInside;
+    }
+
+    //provided by https://www.habrador.com/tutorials/math/9-useful-algorithms/
+    private int ClampListIndex(int index, int listSize)
+    {
+        return ((index % listSize) + listSize) % listSize;
+    }
+
+    //adapted from http://thirdpartyninjas.com/blog/2008/10/07/line-segment-intersection/
+    private bool DoLinesIntersect(Vector3 l1p1, Vector3 l1p2, Vector3 l2p1, Vector3 l2p2, bool includeEndPoints)//todo adapt to 3d see idea for adaptation
+    {
+        bool isIntersecting = false;
+
+        float denom = (l2p2.y - l2p1.y) * (l1p2.x - l1p1.x) - (l2p2.x - l2p1.x) * (l1p2.y - l1p1.y);
+
+        if(denom != 0f)
+        {
+            float uA = ((l2p2.x - l2p1.x) * (l1p1.y - l2p1.y) - (l2p2.y - l2p1.y) * (l1p1.x - l2p1.x)) / denom;
+            float uB = ((l1p2.x - l1p1.x) * (l1p1.y - l2p1.y) - (l1p2.y - l1p1.y) * (l1p1.x - l2p1.x)) / denom;
+
+            if(includeEndPoints)
+            {
+                if(uA >= 0f && uA <= 1f && uB >= 0f && uB <= 1f)
+                {
+                    isIntersecting = true;
+                }
+            }
+            else
+            {
+                if (uA > 0f && uA < 1f && uB > 0f && uB < 1f)
+                {
+                    isIntersecting = true;
+                }
+            }
+        }
+
+        return isIntersecting;
     }
 
     [SerializeField] private bool DrawPoints = true;
@@ -387,16 +457,22 @@ public class Grid_Builder_Anchor : MonoBehaviour
             }
         }
 
-        //if (DrawBoundingLines)
-        //{
-        //    Gizmos.color = Color.magenta;
-        //    foreach (Point point in boundingPoints)
-        //    {
-        //        foreach (Point connection in point.Connections)
-        //        {
-        //            Gizmos.DrawLine(point.Position, connection.Position);
-        //        }
-        //    }
-        //}
+        if (DrawBoundingLines)
+        {
+            Gizmos.color = Color.magenta;
+            foreach (Anchor_Point point in anchors)
+            {
+                foreach (Anchor_Point connection in point.Connections)
+                {
+                    Gizmos.DrawLine(point.Position, connection.Position);
+                }
+            }
+        }
     }
 }
+
+//// IDEA FOR ADAPTATION
+/// repeat existing line intersection test for each z value looped over
+/// get adjusted poly vertices at current z value along line from starting vertex to next vertex
+/// or 
+/// https://www.codeproject.com/Articles/1065730/Point-Inside-Convex-Polygon-in-Cplusplus
