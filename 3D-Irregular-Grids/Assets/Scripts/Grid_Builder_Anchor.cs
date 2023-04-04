@@ -472,7 +472,8 @@ public class Grid_Builder_Anchor : MonoBehaviour
 }
 
 //// IDEA FOR ADAPTATION
-/// repeat existing line intersection test for each z value looped over
-/// get adjusted poly vertices at current z value along line from starting vertex to next vertex
-/// or 
+/// get faces from anchors, get their inward normals(use centroid to verify)
+///     for each proposed point, if magnitude between point and each face matches the sign of the inward normal or is 0
+///         add point
+/// reference
 /// https://www.codeproject.com/Articles/1065730/Point-Inside-Convex-Polygon-in-Cplusplus
