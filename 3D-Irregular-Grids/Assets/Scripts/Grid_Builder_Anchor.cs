@@ -32,18 +32,19 @@ public class Grid_Builder_Anchor : MonoBehaviour
 
     [SerializeField] private Vector3Int upperbound;
     [SerializeField] private Vector3Int lowerbound;
+
+    [SerializeField] private List<Vector4> facePlanes = new List<Vector4>();
     
     private void ClearGrid()
     {
         anchors.Clear();
         gridPoints.Clear();
         subPoints.Clear();
+        facePlanes.Clear();
     }
 
     private void CreatePoints()
     {
-        Debug.LogWarning("AINT DONE YET");
-
         float knownLowerX = float.MaxValue;
         float knownUpperX = float.MinValue;
         float knownLowerY = float.MaxValue;
@@ -85,6 +86,8 @@ public class Grid_Builder_Anchor : MonoBehaviour
             }
         }
 
+        GetPolyFaces();
+
         upperbound = new Vector3Int(Mathf.FloorToInt(knownUpperX), Mathf.FloorToInt(knownUpperY), Mathf.FloorToInt(knownUpperZ));
         lowerbound = new Vector3Int(Mathf.FloorToInt(knownLowerX), Mathf.FloorToInt(knownLowerY), Mathf.FloorToInt(knownLowerZ));
 
@@ -94,10 +97,10 @@ public class Grid_Builder_Anchor : MonoBehaviour
             {
                 for (int z = lowerbound.z; z <= upperbound.z; z++)
                 {
-                    Debug.Log("attempting point creation");
-                    if (GetPoint(x, y, z) == null && IsPointInPolygon(anchors, new Vector3(x,y,z)))
+                    //Debug.Log("attempting point creation");
+                    if (GetPoint(x, y, z) == null && IsPointInPolygon(x, y, z))
                     {
-                        Debug.Log("point creation");
+                        //Debug.Log("point creation");
                         gridPoints.Add(new Point(x, y, z));
                     }
                 }
@@ -108,6 +111,62 @@ public class Grid_Builder_Anchor : MonoBehaviour
     private void CreateConnections()
     {
         Debug.LogWarning("AINT HERE YET");
+
+        /*
+         * for each anchor point
+         *      get the ??? nearest points and add as neighbors
+         *      
+         * for all points
+         *      get the points N S E W U D of the point
+         *      add as neighbors
+         *      
+         *      DIAGONALS????
+         */
+
+        foreach(Point point in gridPoints)
+        {
+            Point neighbor = GetPoint(point, Direction.NORTH);
+
+            if(neighbor != null)
+            {
+                point.AddConnection(neighbor);
+            }
+
+            neighbor = GetPoint(point, Direction.SOUTH);
+
+            if (neighbor != null)
+            {
+                point.AddConnection(neighbor);
+            }
+
+            neighbor = GetPoint(point, Direction.EAST);
+
+            if (neighbor != null)
+            {
+                point.AddConnection(neighbor);
+            }
+
+            neighbor = GetPoint(point, Direction.WEST);
+
+            if (neighbor != null)
+            {
+                point.AddConnection(neighbor);
+            }
+
+            neighbor = GetPoint(point, Direction.UP);
+
+            if (neighbor != null)
+            {
+                point.AddConnection(neighbor);
+            }
+
+            neighbor = GetPoint(point, Direction.DOWN);
+
+            if (neighbor != null)
+            {
+                point.AddConnection(neighbor);
+            }
+        }
     }
 
     private void CreateSubPoints()
@@ -281,6 +340,38 @@ public class Grid_Builder_Anchor : MonoBehaviour
         return gridPoints.Find(point => point.IsNearEnough(x, y, z));
     }
 
+    private enum Direction
+    {
+        NORTH,
+        SOUTH,
+        EAST,
+        WEST,
+        UP,
+        DOWN
+    }
+
+    private Point GetPoint(Point center, Direction dir)
+    {
+        switch(dir)
+        {
+            case Direction.NORTH:
+                return GetPoint(center.Position.x, center.Position.y, center.Position.z + 1);
+            case Direction.SOUTH:
+                return GetPoint(center.Position.x, center.Position.y, center.Position.z - 1);
+            case Direction.EAST:
+                return GetPoint(center.Position.x + 1, center.Position.y, center.Position.z);
+            case Direction.WEST:
+                return GetPoint(center.Position.x - 1, center.Position.y, center.Position.z);
+            case Direction.UP:
+                return GetPoint(center.Position.x, center.Position.y + 1, center.Position.z);
+            case Direction.DOWN:
+                return GetPoint(center.Position.x, center.Position.y - 1, center.Position.z);
+            default:
+                Debug.LogError("SWITCH FALLTHROUGH ERROR");
+                return null;
+        }
+    }
+
     private bool SubPointExists(float x, float y, float z)
     {
         if (subPoints.Count > 0)
@@ -324,84 +415,141 @@ public class Grid_Builder_Anchor : MonoBehaviour
         return cross.magnitude > 0f;
     }
 
-    public bool IsPointInPolygon(List<Anchor_Point> polygonPoints, Vector3 point)
+    private bool IsPointInPolygon(float x, float y, float z)
     {
-        Vector3 xMax = polygonPoints[0].Position;
+        Vector3 point = new Vector3(x, y, z);
 
-        foreach(Anchor_Point anchor in polygonPoints)
+        for(int i = 0; i < facePlanes.Count; i++)
         {
-            if(anchor.Position.x > xMax.x)
+            float distance = GetPlaneDistance(facePlanes[i], point);
+
+            if(distance > 0f)
             {
-                xMax = anchor.Position;
+                return false;
             }
         }
 
-        Vector3 pointOutside = xMax + new Vector3(10f, 0, 0);
-
-        Vector3 l1P1 = point;
-        Vector3 l1P2 = pointOutside;
-
-        int intersectionCount = 0;
-
-        for (int i = 0; i < polygonPoints.Count; i++)
-        {
-            Vector3 l2P1 = polygonPoints[i].Position;
-
-            int iPlusOne = ClampListIndex(i + 1, polygonPoints.Count);
-
-            Vector3 l2P2 = polygonPoints[iPlusOne].Position;
-
-            if (DoLinesIntersect(l1P1, l1P2, l2P1, l2P2, true))
-            {
-                intersectionCount += 1;
-            }
-        }
-
-        bool isInside = true;
-
-        if(intersectionCount == 0 || intersectionCount % 2 == 0)
-        {
-            isInside = false;
-        }
-
-        return isInside;
+        return true;
     }
 
-    //provided by https://www.habrador.com/tutorials/math/9-useful-algorithms/
-    private int ClampListIndex(int index, int listSize)
+    /// adapted from
+    /// https://www.codeproject.com/Articles/1065730/Point-Inside-Convex-Polygon-in-Cplusplus
+    private void GetPolyFaces()
     {
-        return ((index % listSize) + listSize) % listSize;
-    }
+        int vertCount = anchors.Count;
 
-    //adapted from http://thirdpartyninjas.com/blog/2008/10/07/line-segment-intersection/
-    private bool DoLinesIntersect(Vector3 l1p1, Vector3 l1p2, Vector3 l2p1, Vector3 l2p2, bool includeEndPoints)//todo adapt to 3d see idea for adaptation
-    {
-        bool isIntersecting = false;
+        //x,y,z,w => a,b,c,d
+        List<Vector4> faceOutwards = new List<Vector4>();
 
-        float denom = (l2p2.y - l2p1.y) * (l1p2.x - l1p1.x) - (l2p2.x - l2p1.x) * (l1p2.y - l1p1.y);
+        List<List<int>> faceVerticesIndex = new List<List<int>>();
 
-        if(denom != 0f)
+        for(int i = 0; i < vertCount; i++)
         {
-            float uA = ((l2p2.x - l2p1.x) * (l1p1.y - l2p1.y) - (l2p2.y - l2p1.y) * (l1p1.x - l2p1.x)) / denom;
-            float uB = ((l1p2.x - l1p1.x) * (l1p1.y - l2p1.y) - (l1p2.y - l1p1.y) * (l1p1.x - l2p1.x)) / denom;
+            Vector3 p0 = anchors[i].Position;
 
-            if(includeEndPoints)
+            for(int j = i+1; j < vertCount; j++)
             {
-                if(uA >= 0f && uA <= 1f && uB >= 0f && uB <= 1f)
+                Vector3 p1 = anchors[j].Position;
+
+                for(int k = j+1; k < vertCount; k++)
                 {
-                    isIntersecting = true;
-                }
-            }
-            else
-            {
-                if (uA > 0f && uA < 1f && uB > 0f && uB < 1f)
-                {
-                    isIntersecting = true;
+                    Vector3 p2 = anchors[k].Position;
+
+                    Vector4 trianglePlane = GetPlane(p0, p1, p2);
+
+                    int onLeftCount = 0;
+                    int onRightCount = 0;
+
+                    List<int> pointsInSamePlane = new List<int>();
+
+                    for(int l = 0; l < vertCount; l++)
+                    {
+                        if(l != i && l != j && l != k)
+                        {
+                            Vector3 point = anchors[l].Position;
+
+                            float distance = GetPlaneDistance(trianglePlane, point);
+
+                            if(distance == 0f)
+                            {
+                                pointsInSamePlane.Add(l);
+                            }
+                            else
+                            {
+                                if(distance < 0)
+                                {
+                                    onLeftCount++;
+                                }
+                                else
+                                {
+                                    onRightCount++;
+                                }
+                            }
+                        }
+                    }
+
+                    if(onLeftCount == 0 || onRightCount == 0)
+                    {
+                        List<int> faceVertsInOneFace = new List<int>();
+
+                        faceVertsInOneFace.Add(i);
+                        faceVertsInOneFace.Add(j);
+                        faceVertsInOneFace.Add(k);
+
+                        for(int p = 0; p < pointsInSamePlane.Count; p++)
+                        {
+                            faceVertsInOneFace.Add(pointsInSamePlane[p]);
+                        }
+
+                        if(!ContainsList(faceVerticesIndex, faceVertsInOneFace))
+                        {
+                            faceVerticesIndex.Add(faceVertsInOneFace);
+
+                            if(onRightCount == 0)
+                            {
+                                faceOutwards.Add(trianglePlane);
+                            }
+                            else if(onLeftCount == 0)
+                            {
+                                faceOutwards.Add(-trianglePlane);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("POLYGON MAY NOT BE CONVEX");
+                    }
                 }
             }
         }
 
-        return isIntersecting;
+        for(int i = 0; i < faceVerticesIndex.Count; i++)
+        {
+            facePlanes.Add(new Vector4(faceOutwards[i].x, faceOutwards[i].y, faceOutwards[i].z, faceOutwards[i].w));
+
+            List<Vector3> verts = new List<Vector3>();
+            List<int> indices = new List<int>();
+            int count = faceVerticesIndex[i].Count;
+
+            for(int j = 0; j < count; j++)
+            {
+                indices.Add(faceVerticesIndex[i][j]);
+                verts.Add(new Vector3(anchors[indices[j]].Position.x, anchors[indices[j]].Position.y, anchors[indices[j]].Position.z));
+            }
+        }
+    }
+
+    private Vector4 GetPlane(Vector3 p0, Vector3 p1, Vector3 p2)
+    {
+        Vector4 plane = Vector3.Cross(p2 - p0, p1 - p0);
+        plane.w = -((plane.x * p0.x) + (plane.y * p0.y) + (plane.z * p0.z));
+        return plane;
+    }
+
+    private float GetPlaneDistance(Vector4 plane, Vector3 point)
+    {
+        //point.x * plane.a + point.y * plane.b + point.z * plane.c + plane.d
+        return ((point.x * plane.x) + (point.y * plane.y) + (point.z * plane.z) + plane.w);
     }
 
     [SerializeField] private bool DrawPoints = true;
@@ -469,11 +617,27 @@ public class Grid_Builder_Anchor : MonoBehaviour
             }
         }
     }
-}
 
-//// IDEA FOR ADAPTATION
-/// get faces from anchors, get their inward normals(use centroid to verify)
-///     for each proposed point, if magnitude between point and each face matches the sign of the inward normal or is 0
-///         add point
-/// reference
-/// https://www.codeproject.com/Articles/1065730/Point-Inside-Convex-Polygon-in-Cplusplus
+    private bool ContainsList(List<List<int>> list, List<int> item)
+    {
+        /* sort item
+         * for each sub list in list
+         * sort it
+         * compare to item using linq sequenceequals
+         */
+
+        item.Sort();
+
+        foreach(List<int> sublist in list)
+        {
+            sublist.Sort();
+
+            if(sublist.SequenceEqual(item))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
