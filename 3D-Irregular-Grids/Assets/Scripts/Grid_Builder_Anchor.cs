@@ -110,18 +110,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
 
     private void CreateConnections()
     {
-        Debug.LogWarning("AINT HERE YET");
-
-        /*
-         * for each anchor point
-         *      get the ??? nearest points and add as neighbors
-         *      
-         * for all points
-         *      get the points N S E W U D of the point
-         *      add as neighbors
-         *      
-         *      DIAGONALS????
-         */
+        List<Point> temp = GetNearestPoints(gridPoints[7], 3);//todo how many points to get???
 
         foreach(Point point in gridPoints)
         {
@@ -162,6 +151,24 @@ public class Grid_Builder_Anchor : MonoBehaviour
 
             neighbor = GetPoint(point, Direction.DOWN);
 
+            if (neighbor != null)
+            {
+                point.AddConnection(neighbor);
+            }
+
+            neighbor = GetPoint(point.Position.x+1, point.Position.y, point.Position.z+1);
+            if(neighbor != null)
+            {
+                point.AddConnection(neighbor);
+            }
+
+            neighbor = GetPoint(point.Position.x + 1, point.Position.y + 1, point.Position.z);
+            if (neighbor != null)
+            {
+                point.AddConnection(neighbor);
+            }
+
+            neighbor = GetPoint(point.Position.x, point.Position.y + 1, point.Position.z + 1);
             if (neighbor != null)
             {
                 point.AddConnection(neighbor);
@@ -401,6 +408,17 @@ public class Grid_Builder_Anchor : MonoBehaviour
         }
 
         return nearestPoint;
+    }
+
+    private List<Point> GetNearestPoints(Point core, int n)
+    {
+        //sort points by distance from core
+        //take the first n results
+
+        //Debug.Log(gridPoints[0].Position);
+        List<Point> temp = gridPoints.OrderBy(x => Vector3.Distance(core.Position, x.Position)).ToList();
+        //Debug.Log(gridPoints[0].Position + "::" + temp[0].Position);
+        return temp.Take(n).ToList();
     }
 
     private bool IsLeft(Vector3 a, Vector3 b, Vector3 c)
