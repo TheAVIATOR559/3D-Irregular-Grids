@@ -36,6 +36,14 @@ public class Point
         }
     }
 
+    public void AddConnections(List<Point> connections, bool mutual=true)
+    {
+        foreach(Point conn in connections)
+        {
+            this.AddConnection(conn, mutual);
+        }
+    }
+
     public void RemoveConnection(Point other)
     {
         if(this.Connections.Contains(other))

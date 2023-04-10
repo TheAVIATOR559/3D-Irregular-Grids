@@ -14,6 +14,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
     [SerializeField] private float SUB_POINT_RIGIDITY_CHANCE = 0.35f;
     [SerializeField] private int MIN_CONNECTION_COUNT = 3;
     [SerializeField] private float MIN_POINT_DISTANCE = 0.35f;
+    [SerializeField] private int ANCHOR_INTERIOR_CONNECTION_COUNT = 3;
 
     [InspectorButton("CreatePoints", ButtonWidth = 250)]
     public bool CreatePointsButton;
@@ -110,7 +111,10 @@ public class Grid_Builder_Anchor : MonoBehaviour
 
     private void CreateConnections()
     {
-        List<Point> temp = GetNearestPoints(gridPoints[7], 3);//todo how many points to get???
+        for(int i = 0; i < anchors.Count; i++)
+        {
+            gridPoints[i].AddConnections(GetNearestPoints(gridPoints[i], ANCHOR_INTERIOR_CONNECTION_COUNT));
+        }
 
         foreach(Point point in gridPoints)
         {
