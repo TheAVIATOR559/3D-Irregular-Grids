@@ -42,8 +42,13 @@ public class Grid_Builder_2D : MonoBehaviour
         {
             for(int y = 0; y < VERTICAL_GRID_SIZE; y++)
             {
-                if(x == 0 || y == 0
-                    || x == HORIZONTAL_GRID_SIZE - 1 || y == VERTICAL_GRID_SIZE - 1)
+                if((x == 0 || y == 0)
+                    && (x == HORIZONTAL_GRID_SIZE - 1 || y == VERTICAL_GRID_SIZE - 1))
+                {
+                    gridPoints.Add(new Point(x, 0, y, false));
+                }
+                else if ((x == 0 || y == VERTICAL_GRID_SIZE - 1)
+                    && (x == HORIZONTAL_GRID_SIZE - 1 || y == 0))
                 {
                     gridPoints.Add(new Point(x, 0, y, false));
                 }
