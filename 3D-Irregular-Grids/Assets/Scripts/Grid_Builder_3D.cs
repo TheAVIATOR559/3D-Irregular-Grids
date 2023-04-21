@@ -14,10 +14,12 @@ public enum Shape
 
 public class Grid_Builder_3D : MonoBehaviour
 {
+    //master list of points
     private List<Point> gridPoints = new List<Point>();
     private List<Point> subPoints = new List<Point>();
     private List<Point> boundingPoints = new List<Point>();
 
+    //control variables
     [SerializeField] private int GRID_LENGTH = 10;
     [SerializeField] private int GRID_HEIGHT = 10;
     [SerializeField] private int GRID_DEPTH = 10;
@@ -28,6 +30,7 @@ public class Grid_Builder_3D : MonoBehaviour
 
     [SerializeField] private Shape currentShape;
 
+    //utilites draw inspector buttons
     [InspectorButton("CreatePoints", ButtonWidth = 250)]
     public bool CreatePointsButton;
     [InspectorButton("CreateConnections", ButtonWidth = 250)]
@@ -43,6 +46,7 @@ public class Grid_Builder_3D : MonoBehaviour
     [InspectorButton("ClearGrid", ButtonWidth = 250)]
     public bool ClearGridButton;
 
+    //angle offsets for hexagonal prism
     private float sin0;
     private float sin60;
     private float sin120;
@@ -57,6 +61,7 @@ public class Grid_Builder_3D : MonoBehaviour
     private float cos240;
     private float cos300;
 
+    //clear and reset grid
     private void ClearGrid()
     {
         gridPoints.Clear();
@@ -64,6 +69,7 @@ public class Grid_Builder_3D : MonoBehaviour
         boundingPoints.Clear();
     }
 
+    //fire grid creation method based on selected shape
     private void CreatePoints()
     {
         switch(currentShape)
@@ -162,13 +168,6 @@ public class Grid_Builder_3D : MonoBehaviour
                 }
             }
         }
-
-        //for(int i = 8; i < gridPoints.Count; i++)
-        //{
-        //    if(DistanceLineSegmentPoint(gri))
-        //}
-        //Debug.Log(DistanceLineSegmentPoint(gridPoints[0].Position, gridPoints[1].Position, gridPoints[104].Position) + "::" + gridPoints[104].Position);
-
     }
 
     private void CreatePyramid()
@@ -275,8 +274,7 @@ public class Grid_Builder_3D : MonoBehaviour
                     }
                     Vector3 proposedPoint = new Vector3(x, y, z);
 
-                    if (/*IsPointInTetrahedron(gridPoints[0].Position, gridPoints[1].Position, gridPoints[2].Position, proposedPoint)
-                        &&*/ IsPointInTetrahedron(gridPoints[0].Position, gridPoints[1].Position, gridPoints[3].Position, proposedPoint)
+                    if (IsPointInTetrahedron(gridPoints[0].Position, gridPoints[1].Position, gridPoints[3].Position, proposedPoint)
                         && IsPointInTetrahedron(gridPoints[1].Position, gridPoints[2].Position, gridPoints[3].Position, proposedPoint)
                         && IsPointInTetrahedron(gridPoints[2].Position, gridPoints[0].Position, gridPoints[3].Position, proposedPoint))
                     {
@@ -286,15 +284,14 @@ public class Grid_Builder_3D : MonoBehaviour
                 }
             }
         }
-    }
-
-    /* ax + by + cz + d = 0
-     * -d = ax + by + cz
-     * d = -(ax + by + cz)
-     */
+    } 
 
     private bool IsPointInTetrahedron(Vector3 a, Vector3 b, Vector3 c, Vector3 p)
     {
+        /* ax + by + cz + d = 0
+        * -d = ax + by + cz
+        * d = -(ax + by + cz)
+        */
         Vector3 normal = Vector3.Cross(c - a, b - a);
         float k = -((normal.x * c.x) + (normal.y * c.y) + (normal.z * c.z));
         //Debug.Log(k + "=-(" + normal.x + "*" + c.x + "+" + normal.y + "*" + c.y + "+" + normal.z + "*" + c.z);
@@ -502,6 +499,7 @@ public class Grid_Builder_3D : MonoBehaviour
         }
     }
 
+    //fire create connection method based on selected shape
     private void CreateConnections()
     {
         switch (currentShape)
@@ -641,7 +639,6 @@ public class Grid_Builder_3D : MonoBehaviour
                 }
             }
         }
-        Debug.Log(Point.EDGE_COUNT);
     }
 
     private void CreateConnectionsPyramid()
@@ -1116,31 +1113,8 @@ public class Grid_Builder_3D : MonoBehaviour
 
     private void CreateConnectionsHexagonalPrism()
     {
-        //List<Vector3> offsets = new List<Vector3>()
-        //{
-        //    //new Vector3(0, 1, 0),
-        //    new Vector3(sin0, 0, cos0),
-        //    //new Vector3(sin0, 1, cos0),
-        //    new Vector3(sin60, 0, cos60),
-        //    new Vector3(sin120, 0, cos120),
-        //    new Vector3(sin180, 0, cos180),
-        //    new Vector3(sin240, 0, cos240),
-        //    new Vector3(sin300, 0, cos300),
-        //};
-
         foreach (Point point in gridPoints)
         {
-            //foreach(Vector3 offset in offsets)
-            //{
-
-            //    Point connection = GetPoint(point.Position.x + offset.x, point.Position.z + offset.z, point.Position.x + offset.z);
-            //    Debug.Log(point.Position + "::" + offset + "::" + (point.Position + offset) + "::" + connection);
-            //    if (connection != null)
-            //    {
-            //        point.AddConnection(connection);
-            //    }
-            //}
-
             for (int i = 0; i < gridPoints.Count; i++)
             {
                 if (gridPoints[i] == point)
@@ -1246,8 +1220,6 @@ public class Grid_Builder_3D : MonoBehaviour
             }
         }
 
-        
-
         connection = GetNearestPoint(gridPoints[3]);
         if(connection != null)
         {
@@ -1262,10 +1234,16 @@ public class Grid_Builder_3D : MonoBehaviour
         }
     }
 
+    //create subpoints within existing grid cells
     private void CreateSubPoints()
     {
         ShuffleGridPoints();
 
+        //for each point
+        // for each neighbor of point
+        //  for each local left neigbor of neighbor
+        //   if that point is left of point and neighbor
+        //    create new point, set up connections
         foreach (Point start in gridPoints)
         {
             //Debug.Log("start");
@@ -1323,6 +1301,7 @@ public class Grid_Builder_3D : MonoBehaviour
         }
     }
 
+    //fold subpoints into master list
     private void AddSubPointConnections()
     {
         foreach (Point point in subPoints)
@@ -1334,12 +1313,18 @@ public class Grid_Builder_3D : MonoBehaviour
         subPoints.Clear();
     }
 
+    //remove edges from points until threshold is reached
     private void RemoveRandomConnections()
     {
         ShuffleGridPoints();
 
         List<Point> connsToRemove = new List<Point>();
 
+        //for each point
+        // if point has more than minimum
+        //  for each neighbor point
+        //   if both points are movable & have more than minimum threshold
+        //    remove connection btwn point and neighbor
         foreach (Point point in gridPoints)
         {
             if (point.Connections.Count <= MIN_CONNECTION_COUNT)
@@ -1375,6 +1360,7 @@ public class Grid_Builder_3D : MonoBehaviour
         }
     }
 
+    //randomly move points around within master list
     private void ShuffleGridPoints()
     {
         for (int i = 0; i < gridPoints.Count; i++)
@@ -1382,13 +1368,13 @@ public class Grid_Builder_3D : MonoBehaviour
             Point temp = gridPoints[i];
             int randIndex = Random.Range(i, gridPoints.Count);
 
-            //temp.ShuffleConnections();
-
             gridPoints[i] = gridPoints[randIndex];
             gridPoints[randIndex] = temp;
         }
     }
 
+    //apply laplacian smoothing with min distance check
+    //NEEDS TO BE APPLIED MULTIPLE TIMES
     private void RebalanceGrid()
     {
         foreach (Point point in gridPoints)
@@ -1414,33 +1400,9 @@ public class Grid_Builder_3D : MonoBehaviour
         }
     }
 
-    private void UpdateConnections()
-    {
-        foreach (Point core in gridPoints)
-        {
-            foreach (Point neighbor in core.Connections)
-            {
-                if (!neighbor.Connections.Contains(core))
-                {
-                    neighbor.AddConnection(core);
-                }
-            }
-        }
-    }
-
     private Point GetPoint(float x, float y, float z)
     {
         return gridPoints.Find(point => point.IsNearEnough(x, y, z));
-    }
-
-    private bool SubPointExists(float x, float y, float z)
-    {
-        if(subPoints.Count > 0)
-        {
-            return (subPoints.Find(point => point.IsNearEnough(x, y, z)) != null);
-        }
-
-        return false;
     }
 
     private Point GetNearestPoint(Point core)
@@ -1471,23 +1433,11 @@ public class Grid_Builder_3D : MonoBehaviour
         return Vector3.Dot(dir, norm) > 0;
     }
 
-    private float DistanceLineSegmentPoint(Vector3 a, Vector3 b, Vector3 p)
-    {
-        if(a == b)
-        {
-            return Vector3.Distance(a, p);
-        }
-
-        Vector3 ba = b - a;
-        Vector3 pa = a - p;
-        return (pa - ba * (Vector3.Dot(pa, ba) / Vector3.Dot(ba, ba))).magnitude;
-    }
-
     [SerializeField] private bool DrawPoints = true;
     [SerializeField] private bool DrawConnections = true;
     [SerializeField] private bool DrawSubPoints = true;
     [SerializeField] private bool DrawBoundingLines = true;
-
+    //unity specific method for drawing points/edges
     public void OnDrawGizmos()
     {
         if(DrawConnections)

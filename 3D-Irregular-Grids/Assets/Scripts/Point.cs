@@ -5,7 +5,6 @@ using UnityEngine;
 public class Point
 {
     public static float COMPARISON_TOLERANCE = 0.1f;
-    public static int EDGE_COUNT = 0;
 
     public Vector3 Position;
     public List<Point> Connections;
@@ -30,7 +29,6 @@ public class Point
             else
             {
                 this.Connections.Add(other);
-                Point.EDGE_COUNT++;
             }
             
         }
@@ -56,23 +54,6 @@ public class Point
     {
         RemoveConnection(other);
         other.RemoveConnection(this);
-    }
-
-    public bool HasConnectionTo(Point other)
-    {
-        return Connections.Contains(other);
-    }
-
-    public void ShuffleConnections()
-    {
-        for (int i = 0; i < Connections.Count; i++)
-        {
-            Point temp = Connections[i];
-            int randIndex = Random.Range(i, Connections.Count);
-
-            Connections[i] = Connections[randIndex];
-            Connections[randIndex] = temp;
-        }
     }
 
     public void SolidifyConnections()

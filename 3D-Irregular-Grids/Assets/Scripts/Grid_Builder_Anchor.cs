@@ -5,17 +5,20 @@ using System.Linq;
 
 public class Grid_Builder_Anchor : MonoBehaviour
 {
+    //master list of anchors/grid points
     [SerializeField] private List<Anchor_Point> anchors = new List<Anchor_Point>();
 
     private List<Point> gridPoints = new List<Point>();
     private List<Point> subPoints = new List<Point>();
 
+    //control variables
     [SerializeField] private float SUB_POINT_CHANCE = 0.35f;
     [SerializeField] private float SUB_POINT_RIGIDITY_CHANCE = 0.35f;
     [SerializeField] private int MIN_CONNECTION_COUNT = 3;
     [SerializeField] private float MIN_POINT_DISTANCE = 0.35f;
     [SerializeField] private int ANCHOR_INTERIOR_CONNECTION_COUNT = 3;
 
+    //utilites draw inspector buttons
     [InspectorButton("CreatePoints", ButtonWidth = 250)]
     public bool CreatePointsButton;
     [InspectorButton("CreateConnections", ButtonWidth = 250)]
@@ -31,11 +34,12 @@ public class Grid_Builder_Anchor : MonoBehaviour
     [InspectorButton("ClearGrid", ButtonWidth = 250)]
     public bool ClearGridButton;
 
+    //defined space and found face planes
     [SerializeField] private Vector3Int upperbound;
     [SerializeField] private Vector3Int lowerbound;
-
     [SerializeField] private List<Vector4> facePlanes = new List<Vector4>();
     
+    //clear and reset grid
     private void ClearGrid()
     {
         anchors.Clear();
@@ -44,6 +48,8 @@ public class Grid_Builder_Anchor : MonoBehaviour
         facePlanes.Clear();
     }
 
+    //loop over space and create points
+    //set anchor points to immovable
     private void CreatePoints()
     {
         float knownLowerX = float.MaxValue;
@@ -53,6 +59,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
         float knownLowerZ = float.MaxValue;
         float knownUpperZ = float.MinValue;
 
+        //get anchors and set bounds
         foreach (Transform child in transform)
         {
             anchors.Add(child.GetComponent<Anchor_Point>());
@@ -92,6 +99,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
         upperbound = new Vector3Int(Mathf.FloorToInt(knownUpperX), Mathf.FloorToInt(knownUpperY), Mathf.FloorToInt(knownUpperZ));
         lowerbound = new Vector3Int(Mathf.FloorToInt(knownLowerX), Mathf.FloorToInt(knownLowerY), Mathf.FloorToInt(knownLowerZ));
 
+        //loop over space and create points if point is interior
         for (int y = lowerbound.y; y <= upperbound.y; y++)
         {
             for (int x = lowerbound.x; x <= upperbound.x; x++)
@@ -109,6 +117,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
         }
     }
 
+    //loop over grid and set up connection btwn points
     private void CreateConnections()
     {
         for(int i = 0; i < anchors.Count; i++)
@@ -118,48 +127,44 @@ public class Grid_Builder_Anchor : MonoBehaviour
 
         foreach(Point point in gridPoints)
         {
+            //get points in 3d cardinality
             Point neighbor = GetPoint(point, Direction.NORTH);
-
             if(neighbor != null)
             {
                 point.AddConnection(neighbor);
             }
 
             neighbor = GetPoint(point, Direction.SOUTH);
-
             if (neighbor != null)
             {
                 point.AddConnection(neighbor);
             }
 
             neighbor = GetPoint(point, Direction.EAST);
-
             if (neighbor != null)
             {
                 point.AddConnection(neighbor);
             }
 
             neighbor = GetPoint(point, Direction.WEST);
-
             if (neighbor != null)
             {
                 point.AddConnection(neighbor);
             }
 
             neighbor = GetPoint(point, Direction.UP);
-
             if (neighbor != null)
             {
                 point.AddConnection(neighbor);
             }
 
             neighbor = GetPoint(point, Direction.DOWN);
-
             if (neighbor != null)
             {
                 point.AddConnection(neighbor);
             }
 
+            //get points for axis diagonals
             neighbor = GetPoint(point.Position.x+1, point.Position.y, point.Position.z+1);
             if(neighbor != null)
             {
@@ -180,10 +185,16 @@ public class Grid_Builder_Anchor : MonoBehaviour
         }
     }
 
+    //create subpoints within existing grid cells
     private void CreateSubPoints()
     {
         ShuffleGridPoints();
 
+        //for each point
+        // for each neighbor of point
+        //  for each local left neigbor of neighbor
+        //   if that point is left of point and neighbor
+        //    create new point, set up connections
         foreach (Point start in gridPoints)
         {
             //Debug.Log("start");
@@ -210,9 +221,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
                         (start.Position.y + neighbor.Position.y + localLeft.Position.y) / 3,
                         (start.Position.z + neighbor.Position.z + localLeft.Position.z) / 3);
 
-                    if (localLeft.Connections.Contains(start) && IsLeft(start.Position, neighbor.Position, localLeft.Position)
-                        //&& !SubPointExists(proposedPosition.x, proposedPosition.y, proposedPosition.z)
-                        && Random.Range(0f, 1f) <= SUB_POINT_CHANCE)
+                    if (localLeft.Connections.Contains(start) && IsLeft(start.Position, neighbor.Position, localLeft.Position) && Random.Range(0f, 1f) <= SUB_POINT_CHANCE)
                     {
                         Point newPoint = new Point(proposedPosition.x, proposedPosition.y, proposedPosition.z, (Random.Range(0, 1f) >= SUB_POINT_RIGIDITY_CHANCE));
                         subPoints.Add(newPoint);
@@ -227,6 +236,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
             }
         }
 
+        //remove potential duplicates
         for (int i = 0; i < subPoints.Count; i++)
         {
             for (int j = i + 1; j < subPoints.Count; j++)
@@ -241,6 +251,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
         }
     }
 
+    //fold subpoints into master list
     private void AddSubPointConnections()
     {
         foreach (Point point in subPoints)
@@ -252,12 +263,18 @@ public class Grid_Builder_Anchor : MonoBehaviour
         subPoints.Clear();
     }
 
+    //remove edges from points until threshold is reached
     private void RemoveRandomConnections()
     {
         ShuffleGridPoints();
 
         List<Point> connsToRemove = new List<Point>();
 
+        //for each point
+        // if point has more than minimum
+        //  for each neighbor point
+        //   if both points are movable & have more than minimum threshold
+        //    remove connection btwn point and neighbor
         foreach (Point point in gridPoints)
         {
             if (point.Connections.Count <= MIN_CONNECTION_COUNT)
@@ -293,6 +310,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
         }
     }
 
+    //randomly move points around within master list
     private void ShuffleGridPoints()
     {
         for (int i = 0; i < gridPoints.Count; i++)
@@ -300,13 +318,13 @@ public class Grid_Builder_Anchor : MonoBehaviour
             Point temp = gridPoints[i];
             int randIndex = Random.Range(i, gridPoints.Count);
 
-            //temp.ShuffleConnections();
-
             gridPoints[i] = gridPoints[randIndex];
             gridPoints[randIndex] = temp;
         }
     }
 
+    //apply laplacian smoothing with min distance check
+    //NEEDS TO BE APPLIED MULTIPLE TIMES
     private void RebalanceGrid()
     {
         foreach (Point point in gridPoints)
@@ -332,25 +350,12 @@ public class Grid_Builder_Anchor : MonoBehaviour
         }
     }
 
-    private void UpdateConnections()
-    {
-        foreach (Point core in gridPoints)
-        {
-            foreach (Point neighbor in core.Connections)
-            {
-                if (!neighbor.Connections.Contains(core))
-                {
-                    neighbor.AddConnection(core);
-                }
-            }
-        }
-    }
-
     private Point GetPoint(float x, float y, float z)
     {
         return gridPoints.Find(point => point.IsNearEnough(x, y, z));
     }
 
+    //3d cardinality
     private enum Direction
     {
         NORTH,
@@ -381,16 +386,6 @@ public class Grid_Builder_Anchor : MonoBehaviour
                 Debug.LogError("SWITCH FALLTHROUGH ERROR");
                 return null;
         }
-    }
-
-    private bool SubPointExists(float x, float y, float z)
-    {
-        if (subPoints.Count > 0)
-        {
-            return (subPoints.Find(point => point.IsNearEnough(x, y, z)) != null);
-        }
-
-        return false;
     }
 
     private Point GetNearestPoint(Point core)
@@ -427,9 +422,6 @@ public class Grid_Builder_Anchor : MonoBehaviour
 
     private bool IsLeft(Vector3 a, Vector3 b, Vector3 c)
     {
-        //Vector3 dir = Vector3.Cross(b - a, b - c);
-        //Vector3 norm = dir.normalized;
-        //return Vector3.Dot(dir, norm) > 0;
         Vector3 vec = b - a;
         Vector3 dir = c - a;
 
@@ -454,8 +446,8 @@ public class Grid_Builder_Anchor : MonoBehaviour
         return true;
     }
 
-    /// adapted from
-    /// https://www.codeproject.com/Articles/1065730/Point-Inside-Convex-Polygon-in-Cplusplus
+    //point in polygon
+    //does not handle concavity
     private void GetPolyFaces()
     {
         int vertCount = anchors.Count;
@@ -578,7 +570,7 @@ public class Grid_Builder_Anchor : MonoBehaviour
     [SerializeField] private bool DrawConnections = true;
     [SerializeField] private bool DrawSubPoints = true;
     [SerializeField] private bool DrawBoundingLines = true;
-
+    //unity specific method for drawing points/edges
     public void OnDrawGizmos()
     {
         if (DrawConnections)

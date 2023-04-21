@@ -5,9 +5,11 @@ using System.Linq;
 
 public class Grid_Builder_2D : MonoBehaviour
 {
+    //master list of points
     private List<Point> gridPoints = new List<Point>();
     private List<Point> subPoints = new List<Point>();
 
+    //control variables
     [SerializeField] private int HORIZONTAL_GRID_SIZE = 10;
     [SerializeField] private int VERTICAL_GRID_SIZE = 10;
     [SerializeField] private float DIAGONAL_FLIP_CHANCE = 0.35f;
@@ -16,6 +18,7 @@ public class Grid_Builder_2D : MonoBehaviour
     [SerializeField] private int MIN_CONNECTION_COUNT = 3;
     [SerializeField] private float MIN_POINT_DISTANCE = 0.35f;
 
+    //utilites draw inspector buttons
     [InspectorButton("CreatePoints", ButtonWidth = 250)]
     public bool CreatePointsButton;
     [InspectorButton("CreateConnections", ButtonWidth = 250)]
@@ -31,11 +34,14 @@ public class Grid_Builder_2D : MonoBehaviour
     [InspectorButton("ClearGrid", ButtonWidth = 250)]
     public bool ClearGridButton;
 
+    //clear and reset grid
     private void ClearGrid()
     {
         gridPoints.Clear();
     }
 
+    //loop over space and create points
+    //set corner points to immovable
     private void CreatePoints()
     {
         for(int x = 0; x < HORIZONTAL_GRID_SIZE; x++)
@@ -60,6 +66,8 @@ public class Grid_Builder_2D : MonoBehaviour
         }
     }
 
+    //loop over grid and set up connection btwn points
+    //randomly flip a percentage of diagonal connections
     private void CreateConnections()
     {
         List<Vector3> diagonalsToFlip = new List<Vector3>();
@@ -142,10 +150,16 @@ public class Grid_Builder_2D : MonoBehaviour
         }
     }
 
+    //create subpoints within existing grid cells
     private void CreateSubPoints()
     {
         ShuffleGridPoints();
 
+        //for each point
+        // for each neighbor of point
+        //  for each local left neigbor of neighbor
+        //   if that point is left of point and neighbor
+        //    create new point, set up connections
         foreach(Point start in gridPoints)
         {
             foreach(Point neighbor in start.Connections)
@@ -170,6 +184,7 @@ public class Grid_Builder_2D : MonoBehaviour
             }
         }
 
+        //remove any potential duplicate subpoints
         for (int i = 0; i < subPoints.Count; i++)
         {
             for (int j = i + 1; j < subPoints.Count; j++)
@@ -184,6 +199,7 @@ public class Grid_Builder_2D : MonoBehaviour
         }
     }
 
+    //fold subpoints into master list
     private void AddSubPointConnections()
     {
         foreach(Point point in subPoints)
@@ -198,12 +214,18 @@ public class Grid_Builder_2D : MonoBehaviour
         subPoints.Clear();
     }
 
+    //remove edges from points until threshold is reached
     private void RemoveRandomConnections()
     {
         ShuffleGridPoints();
 
         List<Point> connsToRemove = new List<Point>();
 
+        //for each point
+        // if point has more than minimum
+        //  for each neighbor point
+        //   if both points are movable & have more than minimum threshold
+        //    remove connection btwn point and neighbor
         foreach(Point point in gridPoints)
         {
             if(point.Connections.Count <= MIN_CONNECTION_COUNT)
@@ -239,6 +261,7 @@ public class Grid_Builder_2D : MonoBehaviour
         }
     }
 
+    //randomly move points around within master list
     private void ShuffleGridPoints()
     {
         for(int i = 0; i < gridPoints.Count; i++)
@@ -251,6 +274,8 @@ public class Grid_Builder_2D : MonoBehaviour
         }
     }
 
+    //apply laplacian smoothing with min distance check
+    //NEEDS TO BE APPLIED MULTIPLE TIMES
     private void RebalanceGrid()
     {
         foreach(Point point in gridPoints)
@@ -276,20 +301,6 @@ public class Grid_Builder_2D : MonoBehaviour
         }
     }
 
-    private void UpdateConnections()
-    {
-        foreach(Point core in gridPoints)
-        {
-            foreach(Point neighbor in core.Connections)
-            {
-                if(!neighbor.Connections.Contains(core))
-                {
-                    neighbor.AddConnection(core);
-                }
-            }
-        }
-    }
-
     private Point GetPoint(float x, float y, float z)
     {
         return gridPoints.Find(point => point.Position == new Vector3(x, y, z));
@@ -300,6 +311,7 @@ public class Grid_Builder_2D : MonoBehaviour
         return ((b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x)) > 0;
     }
 
+    //unity specific method for drawing points/edges
     public void OnDrawGizmos()
     {
         Gizmos.color = Color.green;
